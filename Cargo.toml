@@ -1,0 +1,12 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+style = "warn"
+nursery = "warn"
