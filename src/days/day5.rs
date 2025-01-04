@@ -31,6 +31,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{output}")
 }
 
+#[allow(dead_code)]
 pub fn run1_old(lines: &mut LinesIterator) -> String {
     let mut edges: Vec<(usize, usize)> = vec![];
     let mut updates: Vec<Vec<usize>> = vec![];
@@ -98,7 +99,7 @@ pub fn run2(lines: &mut LinesIterator) -> String {
     };
 
     let mut output = 0;
-    for update in updates.iter_mut() {
+    for update in &mut updates {
         if !update.is_sorted_by(|a, b| compare(a, b) != Ordering::Greater) {
             update.sort_by(compare);
             output += update[update.len() / 2];
