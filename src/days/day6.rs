@@ -1,6 +1,7 @@
 use crate::utils::{lines_to_grid_of_chars, LinesIterator};
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
+use std::io::Write;
 
 // tuple of either (-1,0), (0,1), (1,0), or (0,-1).
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -183,14 +184,13 @@ pub fn run2(lines: &mut LinesIterator) -> String {
 
     let mut num_loops = 0;
     let num = visited_positions.clone().count();
-    println!("num:{num}");
+    println!("Number of positions to try: {num}");
 
     // Try every possible position to put a barrier to see if it loops
     for (i, (r, c)) in visited_positions.enumerate() {
-        if i % 100 == 0 {
-            let percentage = 100.0 * (i as f64) / (num as f64);
-            println!("{percentage:.2}%");
-        }
+        let percentage = 100.0 * (i as f64) / (num as f64);
+        print!("\rProgress: {percentage:.2}%");
+        std::io::stdout().flush().unwrap();
         let r = *r;
         let c = *c;
         let mut tmp_grid = grid.clone();
@@ -209,6 +209,7 @@ pub fn run2(lines: &mut LinesIterator) -> String {
             num_loops += 1;
         }
     }
+    println!();
 
-    format!("{num_loops}")
+    format!("Number of positions which cause a loop: {num_loops}")
 }
