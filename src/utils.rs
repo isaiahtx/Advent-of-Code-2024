@@ -2,6 +2,7 @@ pub type LinesIterator = std::io::Lines<std::io::BufReader<std::fs::File>>;
 
 /// Takes an iterator to a bunch of strings and a separator, returns an iterator over vectors of strings, where each vector is obtained by splitting each line in the iterator by the separator.
 #[allow(clippy::needless_lifetimes)]
+#[allow(dead_code)]
 pub fn lines_to_grid<'a>(
     lines: &'a mut LinesIterator,
     separator: &'a str,
