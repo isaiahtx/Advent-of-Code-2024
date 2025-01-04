@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+graph = "0.3.1"
 regex = "1.11.1"
 
 [lints.clippy]
