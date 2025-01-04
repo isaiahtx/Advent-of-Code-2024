@@ -1,6 +1,8 @@
+use crate::utils::LinesIterator;
+
 use regex::Regex;
 
-pub fn run1(lines: &mut super::LinesIterator) -> String {
+pub fn run1(lines: &mut LinesIterator) -> String {
     let mut result = 0;
     for line in lines.map(Result::unwrap) {
         result += evaluate_1(&line).unwrap();
@@ -8,7 +10,7 @@ pub fn run1(lines: &mut super::LinesIterator) -> String {
     format!("{result}")
 }
 
-pub fn run2(lines: &mut super::LinesIterator) -> String {
+pub fn run2(lines: &mut LinesIterator) -> String {
     let mut result = 0;
     let mut do_multiply = true;
     for line in lines.map(Result::unwrap) {

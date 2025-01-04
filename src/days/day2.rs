@@ -1,11 +1,13 @@
-pub fn run1(lines: &mut super::LinesIterator) -> String {
+use crate::utils::LinesIterator;
+
+pub fn run1(lines: &mut LinesIterator) -> String {
     let num_safe = prepare_lines(lines)
         .filter(|line| check_safe_1(line))
         .count();
     format!("{num_safe}")
 }
 
-pub fn run2(lines: &mut super::LinesIterator) -> String {
+pub fn run2(lines: &mut LinesIterator) -> String {
     let num_safe = prepare_lines(lines)
         .filter(|line| check_safe_2_naive(line))
         .count();
@@ -15,7 +17,7 @@ pub fn run2(lines: &mut super::LinesIterator) -> String {
 // Lifetime annotation here is not actually needless, so we need to tell clippy to stop
 // complaining.
 #[allow(clippy::needless_lifetimes)]
-fn prepare_lines<'a>(lines: &'a mut super::LinesIterator) -> impl Iterator<Item = Vec<i32>> + 'a {
+fn prepare_lines<'a>(lines: &'a mut LinesIterator) -> impl Iterator<Item = Vec<i32>> + 'a {
     lines.map(Result::unwrap).map(|x| {
         x.split_whitespace()
             .map(|x| x.parse::<i32>().unwrap())

@@ -1,6 +1,7 @@
+use crate::utils::LinesIterator;
 use std::collections::HashMap;
 
-pub fn run1(lines: &mut super::LinesIterator) -> String {
+pub fn run1(lines: &mut LinesIterator) -> String {
     let mut l = vec![];
     let mut r = vec![];
     for temp_line in lines {
@@ -22,7 +23,7 @@ pub fn run1(lines: &mut super::LinesIterator) -> String {
     format!("{total_dist}")
 }
 
-pub fn run2(lines: &mut super::LinesIterator) -> String {
+pub fn run2(lines: &mut LinesIterator) -> String {
     let mut lcount: HashMap<i64, i64> = HashMap::new();
     let mut rcount: HashMap<i64, i64> = HashMap::new();
 
