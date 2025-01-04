@@ -46,7 +46,7 @@ pub fn run2(lines: &mut super::LinesIterator) -> String {
 
     for key in lcount.keys() {
         if rcount.contains_key(key) {
-            output += key * lcount[key] * rcount[key];
+            output += *key * lcount[key] * rcount[key];
         }
     }
 

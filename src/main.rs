@@ -51,11 +51,13 @@ fn main() {
         1 => match day_number {
             1 => days::day1::run1(&mut lines),
             2 => days::day2::run1(&mut lines),
+            3 => days::day3::run1(&mut lines),
             _ => panic!("huh?"),
         },
         2 => match day_number {
             1 => days::day1::run2(&mut lines),
             2 => days::day2::run2(&mut lines),
+            3 => days::day3::run2(&mut lines),
             _ => panic!("huh?"),
         },
         _ => {
