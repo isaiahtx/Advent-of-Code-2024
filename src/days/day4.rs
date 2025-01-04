@@ -1,4 +1,4 @@
-use crate::utils::*;
+use crate::utils::{LinesIterator, lines_to_grid_of_chars};
 
 pub fn run1(lines: &mut LinesIterator) -> String {
     let grid: Vec<Vec<char>> = lines_to_grid_of_chars(lines).collect();

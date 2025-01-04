@@ -1,7 +1,7 @@
 use graph::prelude::{DirectedCsrGraph, DirectedNeighbors, GraphBuilder};
 use std::cmp::Ordering;
 
-use crate::utils::*;
+use crate::utils::LinesIterator;
 
 pub fn run1(lines: &mut LinesIterator) -> String {
     let mut edges: Vec<(usize, usize)> = vec![];
