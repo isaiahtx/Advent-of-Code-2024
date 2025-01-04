@@ -21,6 +21,7 @@ impl Direction {
         }
     }
 
+    /*
     const fn get_dir(&self) -> char {
         match self {
             Self(-1, 0) => '^',
@@ -30,6 +31,7 @@ impl Direction {
             _ => panic!("Should never happen!"),
         }
     }
+    */
 }
 
 impl Guard {
