@@ -1,4 +1,4 @@
-pub mod days;
+mod days;
 mod utils;
 use std::env;
 use std::fs::File;
@@ -10,7 +10,10 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 3 || args.len() > 4 {
-        eprintln!("Usage: {} <day_number> <part_1_or_2>", args[0]);
+        eprintln!(
+            "Usage: {} <day_number> <part_1_or_2> [path (optional)]",
+            args[0]
+        );
         process::exit(1);
     }
 
@@ -39,15 +42,28 @@ fn main() {
     println!("Running part {part} of day {day_number} using input {path}.");
     println!();
 
-    let lines: days::LinesIterator = read_lines(path).unwrap_or_else(|err| {
+    let mut lines: days::LinesIterator = read_lines(path).unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1);
     });
 
-    match day_number {
-        1 => days::day1::run(lines, part),
-        _ => println!("no!"),
-    }
+    let output = match part {
+        1 => match day_number {
+            1 => days::day1::run1(&mut lines),
+            2 => days::day2::run1(&mut lines),
+            _ => panic!("huh?"),
+        },
+        2 => match day_number {
+            1 => days::day1::run2(&mut lines),
+            2 => days::day2::run2(&mut lines),
+            _ => panic!("huh?"),
+        },
+        _ => {
+            panic!("huh?");
+        }
+    };
+
+    println!("{output}");
 }
 fn read_lines<P>(filename: P) -> io::Result<days::LinesIterator>
 where
