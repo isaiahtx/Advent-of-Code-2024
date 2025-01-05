@@ -1,17 +1,9 @@
 use crate::utils::LinesIterator;
+use rand::Rng;
 use std::collections::VecDeque;
 
-pub fn run1(lines: &mut LinesIterator) -> String {
-    let line = lines
-        .next()
-        .unwrap()
-        .unwrap()
-        .chars()
-        .map(|x| x.to_digit(10).unwrap())
-        .collect::<Vec<_>>();
-
-    // print_vec_num(&line);
-
+fn parse(line: &[u32]) -> usize {
+    // print_vec_num(line);
     let length = line.len();
     let mut to_borrow: VecDeque<(usize, u32)> = VecDeque::new();
     let mut j = if length % 2 == 1 { length + 1 } else { length };
@@ -21,6 +13,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
 
     // let mut output = Vec::new();
     'outer: for (i, num) in line.iter().enumerate() {
+        // println!("----");
         let num = *num;
         if i % 2 == 0 {
             if i >= j {
@@ -56,17 +49,27 @@ pub fn run1(lines: &mut LinesIterator) -> String {
                 k += 1;
             }
         }
-        // println!("----");
         // print_vec_num(&output);
         // print_vecdq_num(&to_borrow);
         // println!("i:{i}");
         // println!("j:{j}");
-        if i >= j {
-            break;
-        }
     }
 
     // print_vec_num(&output);
+
+    result
+}
+
+pub fn run1(lines: &mut LinesIterator) -> String {
+    let result = parse(
+        &lines
+            .next()
+            .unwrap()
+            .unwrap()
+            .chars()
+            .map(|x| x.to_digit(10).unwrap())
+            .collect::<Vec<u32>>(),
+    );
 
     format!("{result}")
 }
@@ -90,4 +93,13 @@ pub fn print_vec_num<T: std::fmt::Debug>(v: &[T]) {
 pub fn run2(lines: &mut LinesIterator) -> String {
     lines.next();
     format!("{lines:?}")
+}
+
+#[allow(dead_code)]
+fn generate_random_vector() -> Vec<u32> {
+    let mut rng = rand::thread_rng();
+    let length = rng.gen_range(1..=100); // Random length between 1 and 100
+    (0..length)
+        .map(|_| rng.gen_range(0..10) as u32) // Random single-digit integers (0 to 9)
+        .collect()
 }
