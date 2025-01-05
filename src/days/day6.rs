@@ -1,4 +1,5 @@
 use crate::utils::{lines_to_grid_of_chars, LinesIterator};
+use ::std::time::{Duration, Instant};
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
@@ -27,6 +28,7 @@ enum StepOutput {
     OffMap,
 }
 
+#[derive(Clone)]
 struct Board {
     grid: Vec<Vec<char>>,
     guard_r: usize,
@@ -76,6 +78,19 @@ impl Board {
         }
     }
 
+    fn reset(&mut self, r: usize, c: usize) {
+        self.guard_r = r;
+        self.guard_c = c;
+        self.guard_dir = Direction(-1, 0);
+        self.guard_off_map = false;
+        self.guard_visited.clear();
+        self.guard_visited
+            .entry((r, c))
+            .or_default()
+            .insert(self.guard_dir);
+        self.check_for_loops = true;
+    }
+
     fn step(&mut self) -> StepOutput {
         let height = self.grid.len();
         assert!(height > 0);
@@ -119,7 +134,7 @@ impl Board {
         if target == '#' {
             self.guard_dir = self.guard_dir.turn_right();
 
-            let directions = self.guard_visited.entry((new_r, new_c));
+            let directions = self.guard_visited.entry((self.guard_r, self.guard_c));
 
             if let Entry::Occupied(e) = &directions {
                 if self.check_for_loops && e.get().contains(&self.guard_dir) {
@@ -153,6 +168,15 @@ pub fn run1(lines: &mut LinesIterator) -> String {
 
     while !board.guard_off_map {
         let result = board.step();
+        //println!(
+        //    "{:?}",
+        //    board
+        //        .clone()
+        //        .guard_visited
+        //        .keys()
+        //        .collect::<Vec<&(usize, usize)>>()
+        //);
+        //println!();
         if matches!(result, StepOutput::Loop) {
             println!("loop!");
             break;
@@ -164,52 +188,62 @@ pub fn run1(lines: &mut LinesIterator) -> String {
 
 pub fn run2(lines: &mut LinesIterator) -> String {
     let grid: Vec<_> = lines_to_grid_of_chars(lines).collect();
+    let mut num_loops = 0;
     let mut board = Board::new(grid.clone());
-    let starting_r = board.guard_r;
-    let starting_c = board.guard_c;
+    let r0 = board.guard_r;
+    let c0 = board.guard_c;
 
-    // First run the board to see which positions are hit at all.
     while !board.guard_off_map {
-        let result = board.step();
-        if matches!(result, StepOutput::Loop) {
-            println!("loop!");
+        if matches!(board.step(), StepOutput::Loop) {
+            println!("loop");
             break;
         }
     }
 
-    let visited_positions = board
+    let to_visit = board
         .guard_visited
         .keys()
-        .filter(|&&x| x != (starting_r, starting_c));
+        .filter(|&&x| x != (r0, c0))
+        .copied();
 
-    let mut num_loops = 0;
-    let num = visited_positions.clone().count();
-    println!("Number of positions to try: {num}");
+    let mut b = Board::new(grid);
 
-    // Try every possible position to put a barrier to see if it loops
-    for (i, (r, c)) in visited_positions.enumerate() {
-        let percentage = 100.0 * (i as f64) / (num as f64);
-        print!("\rProgress: {percentage:.2}%");
-        std::io::stdout().flush().unwrap();
-        let r = *r;
-        let c = *c;
-        let mut tmp_grid = grid.clone();
-        tmp_grid[r][c] = '#';
-        let mut loops = false;
+    let num_to_check = to_visit.clone().count();
 
-        let mut tmp_board = Board::new(tmp_grid);
+    let mut now = Instant::now();
 
-        while !tmp_board.guard_off_map {
-            if matches!(tmp_board.step(), StepOutput::Loop) {
-                loops = true;
+    for (i, (r, c)) in to_visit.enumerate() {
+        b.grid[r][c] = '#';
+
+        while !b.guard_off_map {
+            if matches!(b.step(), StepOutput::Loop) {
+                num_loops += 1;
                 break;
             }
         }
-        if loops {
-            num_loops += 1;
+
+        b.grid[r][c] = '.';
+        b.reset(r0, c0);
+
+        if now.elapsed() >= Duration::from_secs_f32(0.1) {
+            let percentage = 100.0 * (i as f64) / (num_to_check as f64);
+            print!("\rProgress: {percentage:.2}%");
+            std::io::stdout().flush().unwrap();
+            now = Instant::now();
         }
     }
     println!();
 
     format!("Number of positions which cause a loop: {num_loops}")
+}
+
+#[allow(dead_code)]
+fn print_board(b: &Vec<Vec<char>>) {
+    for line in b {
+        for c in line {
+            print!("{c}");
+        }
+        println!();
+    }
+    println!();
 }
