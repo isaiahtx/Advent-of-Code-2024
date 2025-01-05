@@ -91,7 +91,82 @@ fn get_antinodes(pos1: &P<usize>, pos2: &P<usize>, height: usize, width: usize) 
     output
 }
 
+fn get_antinodes_2(pos1: &P<usize>, pos2: &P<usize>, height: usize, width: usize) -> Vec<P<usize>> {
+    let mut output = vec![];
+
+    let mut pos = Some(*pos1);
+    while pos.is_some() {
+        if let Some(p) = pos {
+            if in_bounds(&p, height, width) {
+                output.push(p);
+            } else {
+                break;
+            }
+        }
+        pos = (pos.unwrap() + *pos1).checked_sub(pos2);
+    }
+
+    let mut pos = Some(*pos2);
+    while pos.is_some() {
+        if let Some(p) = pos {
+            if in_bounds(&p, height, width) {
+                output.push(p);
+            } else {
+                break;
+            }
+        }
+        pos = (pos.unwrap() + *pos2).checked_sub(pos1);
+    }
+
+    output
+}
+
 pub fn run2(lines: &mut LinesIterator) -> String {
-    lines.next();
-    format!("{lines:?}")
+    let grid: Vec<_> = lines_to_grid_of_chars(lines).collect();
+    let height = grid.len();
+    let width = grid[0].len();
+
+    let mut map: HashMap<char, Vec<P<usize>>> = HashMap::new();
+
+    for (i, line) in grid.iter().enumerate() {
+        for (j, c) in line.iter().enumerate() {
+            if *c != '.' {
+                map.entry(*c).or_default().push(P(i, j));
+            }
+        }
+    }
+
+    let mut antinodes: HashSet<P<usize>> = HashSet::new();
+
+    for antennae in map.values() {
+        let antennae_pairs = antennae
+            .iter()
+            .enumerate()
+            .flat_map(|(i, item1)| antennae.iter().skip(i + 1).map(|item2| (*item1, *item2)));
+
+        for (pos1, pos2) in antennae_pairs {
+            for x in get_antinodes_2(&pos1, &pos2, height, width) {
+                antinodes.insert(x);
+            }
+        }
+    }
+
+    // let mut output = 0;
+    //
+    // for p in antinodes {
+    //     grid[p.0][p.1] = '#';
+    //     output += 1;
+    // }
+
+    // for line in grid {
+    //     for c in line {
+    //         print!("{c}");
+    //     }
+    //     println!();
+    // }
+    // println!();
+
+    // format!("{output}")
+
+    format!("{}", antinodes.len())
 }
