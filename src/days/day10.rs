@@ -64,7 +64,7 @@ pub fn run2(lines: &mut LinesIterator) -> String {
     for (r, row) in map.iter().enumerate() {
         for (c, character) in row.iter().enumerate() {
             if *character == 0 {
-                output += num_of_paths(&(r, c), &is_9, &get_edges);
+                output += num_of_paths((r, c), &is_9, &get_edges);
             }
         }
     }

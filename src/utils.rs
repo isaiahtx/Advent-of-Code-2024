@@ -302,7 +302,7 @@ where
     None
 }
 
-pub fn num_of_paths<T, F1, F2>(src: &T, is_tgt: &F1, get_edges: &F2) -> usize
+pub fn num_of_paths<T, F1, F2>(src: T, is_tgt: &F1, get_edges: &F2) -> usize
 where
     T: Eq + Hash + Debug + Copy,
     F1: Fn(T) -> bool,
@@ -312,11 +312,11 @@ where
     // assert_ne!(src, tgt);
 
     let mut count = 0;
-    for nbr in get_edges(*src) {
+    for nbr in get_edges(src) {
         if is_tgt(nbr) {
             count += 1;
         } else {
-            count += num_of_paths(&nbr, is_tgt, get_edges);
+            count += num_of_paths(nbr, is_tgt, get_edges);
         }
     }
     count
@@ -345,7 +345,7 @@ mod tests {
 
         let is_tgt = |x: u8| x >= 8;
 
-        assert_eq!(num_of_paths(&0, &is_tgt, &get_edges), 4);
+        assert_eq!(num_of_paths(0, &is_tgt, &get_edges), 4);
     }
 
     #[test]
