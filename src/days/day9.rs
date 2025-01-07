@@ -142,7 +142,7 @@ fn parse_2(line: &[u32]) -> u64 {
 
     for (id_opt, num) in row {
         if let Some(id) = id_opt {
-            result += id as u64 * ((num * i) + (((num - 1) * num) / 2)) as u64;
+            result += id as u64 * u64::from((num * i) + (((num - 1) * num) / 2));
         }
         i += num;
     }

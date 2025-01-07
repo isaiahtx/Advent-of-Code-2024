@@ -1,5 +1,5 @@
 mod days;
-mod utils;
+pub mod utils;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead};
