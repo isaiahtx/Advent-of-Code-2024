@@ -5,7 +5,7 @@ fn num_digits(n: u128) -> usize {
     (n.checked_ilog10().unwrap_or(0) + 1) as usize
 }
 
-fn blink_one_stone(stone: u128) -> (u128, Option<u128>) {
+fn blink_once(stone: u128) -> (u128, Option<u128>) {
     if stone == 0 {
         (1, None)
     } else {
@@ -23,12 +23,9 @@ fn blink_one_stone(stone: u128) -> (u128, Option<u128>) {
 fn blink(stones: &[u128]) -> Vec<u128> {
     stones
         .iter()
-        .flat_map(|n| {
-            let p = blink_one_stone(*n);
-            match p {
-                (a, None) => vec![a],
-                (a, Some(b)) => vec![a, b],
-            }
+        .flat_map(|n| match blink_once(*n) {
+            (a, None) => vec![a],
+            (a, Some(b)) => vec![a, b],
         })
         .collect()
 }
@@ -55,16 +52,16 @@ pub fn run1(lines: &mut LinesIterator) -> String {
 type Blinked = (u128, Option<u128>);
 
 struct StoneCollapser {
-    blink_once: Memoizer<fn(u128) -> Blinked, u128, Blinked>,
+    memoized_blink_once: Memoizer<fn(u128) -> Blinked, u128, Blinked>,
     map: HashMap<(u128, usize), usize>,
 }
 
 impl StoneCollapser {
     fn new() -> Self {
-        let blink_once = Memoizer::new(blink_one_stone as fn(u128) -> Blinked);
+        let blink_once = Memoizer::new(blink_once as fn(u128) -> Blinked);
 
         Self {
-            blink_once,
+            memoized_blink_once: blink_once,
             map: HashMap::new(),
         }
     }
@@ -87,7 +84,7 @@ impl StoneCollapser {
                     1
                 }
             }
-            _ => match self.blink_once.call(stone) {
+            _ => match self.memoized_blink_once.call(stone) {
                 (a, None) => self.collapse_stone(a, gens - 1),
                 (a, Some(b)) => self.collapse_stone(a, gens - 1) + self.collapse_stone(b, gens - 1),
             },
