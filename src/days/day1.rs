@@ -1,6 +1,9 @@
 use crate::utils::LinesIterator;
 use std::collections::HashMap;
 
+/// # Panics
+///
+/// idfk
 pub fn run1(lines: &mut LinesIterator) -> String {
     let mut l = vec![];
     let mut r = vec![];
@@ -23,6 +26,9 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{total_dist}")
 }
 
+/// # Panics
+///
+/// idfk
 pub fn run2(lines: &mut LinesIterator) -> String {
     let mut lcount: HashMap<i64, i64> = HashMap::new();
     let mut rcount: HashMap<i64, i64> = HashMap::new();

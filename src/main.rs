@@ -1,8 +1,9 @@
-mod bimap;
-mod days;
-mod graph;
-mod memoizer;
-mod utils;
+pub mod bimap;
+pub mod days;
+pub mod graph;
+pub mod memoizer;
+pub mod uptree;
+pub mod utils;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead};

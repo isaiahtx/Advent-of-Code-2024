@@ -1,4 +1,4 @@
-use crate::bimap::*;
+use crate::bimap::BiMap;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
