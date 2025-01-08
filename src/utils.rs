@@ -302,6 +302,34 @@ where
     None
 }
 
+pub struct Memoizer<F, I, O>
+where
+    F: Fn(I) -> O,
+{
+    function: F,
+    map: HashMap<I, O>,
+}
+
+impl<F, I, O> Memoizer<F, I, O>
+where
+    I: Hash + Eq + Clone,
+    O: Clone,
+    F: Fn(I) -> O,
+{
+    pub fn new(function: F) -> Self {
+        Self {
+            function,
+            map: HashMap::new(),
+        }
+    }
+
+    pub fn call(&mut self, arg: I) -> O {
+        let f = &self.function;
+        let key = arg.clone();
+        self.map.entry(key).or_insert_with(|| (f)(arg)).clone()
+    }
+}
+
 pub fn num_of_paths<T, F1, F2>(src: T, is_tgt: &F1, get_edges: &F2) -> usize
 where
     T: Eq + Hash + Debug + Copy,
