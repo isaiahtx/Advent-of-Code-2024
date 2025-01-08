@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::bimap::BiMap;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::{HashMap, HashSet, VecDeque};

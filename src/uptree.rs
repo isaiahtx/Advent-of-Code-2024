@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::bimap::{BiMap, InsertResult::Contained, InsertResult::DidNotContain};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -219,7 +220,7 @@ where
         }
     }
 
-    fn union(&mut self, x: &T, y: &T) -> bool {
+    pub fn union(&mut self, x: &T, y: &T) -> bool {
         if let Some(id_x) = self.dict.get_id(x) {
             if let Some(id_y) = self.dict.get_id(y) {
                 return self.union_by_id(id_x, id_y);
@@ -228,7 +229,7 @@ where
         false
     }
 
-    fn get_sizes(&mut self) -> Vec<usize> {
+    pub fn get_sizes(&mut self) -> Vec<(T, usize)> {
         let mut sets: HashMap<usize, Vec<usize>> = HashMap::new();
         for id in 0..self.num_nodes {
             if let Some(parent_id) = self.find_by_id(id) {
@@ -236,10 +237,12 @@ where
             }
         }
 
-        sets.values().map(std::vec::Vec::len).collect()
+        sets.values()
+            .map(|v| (self.dict.get_value(v[0]).unwrap().clone(), v.len()))
+            .collect()
     }
 
-    fn flatten(&mut self) -> Vec<Vec<(&T, &W)>> {
+    pub fn flatten(&mut self) -> Vec<Vec<(&T, &W)>> {
         let mut sets: HashMap<usize, Vec<usize>> = HashMap::new();
         for id in 0..self.num_nodes {
             if let Some(parent_id) = self.find_by_id(id) {
