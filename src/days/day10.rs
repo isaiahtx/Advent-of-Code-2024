@@ -1,4 +1,5 @@
-use crate::utils::{lines_to_grid_of_usize, num_of_paths, num_reachable_targets, LinesIterator};
+use crate::graph::{num_of_paths, num_reachable_targets};
+use crate::utils::{lines_to_grid_of_usize, LinesIterator};
 use std::collections::HashSet;
 
 fn make_get_edges(map: &[Vec<usize>]) -> impl Fn((usize, usize)) -> HashSet<(usize, usize)> + '_ {

@@ -1,4 +1,5 @@
-use crate::utils::{LinesIterator, Memoizer};
+use crate::memoizer::Memoizer;
+use crate::utils::LinesIterator;
 use std::collections::HashMap;
 
 fn num_digits(n: u128) -> usize {
