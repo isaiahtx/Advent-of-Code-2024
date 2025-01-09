@@ -2,91 +2,49 @@ use crate::uptree::UpTree;
 use crate::utils::{lines_to_grid_of_chars, LinesIterator};
 use std::collections::{HashSet, VecDeque};
 
-fn make_get_num_edges(grid: &[Vec<char>]) -> impl Fn((usize, usize)) -> usize + '_ {
-    let height = grid.len();
-    let width = grid[0].len();
-    move |t: (usize, usize)| {
-        let r = t.0;
-        let c = t.1;
-        let cur = grid[r][c];
-        let mut output = 4;
-
-        if r + 1 < height && grid[r + 1][c] == cur {
-            output -= 1;
-        }
-
-        if c + 1 < width && grid[r][c + 1] == cur {
-            output -= 1;
-        }
-
-        if r > 0 && grid[r - 1][c] == cur {
-            output -= 1;
-        }
-
-        if c > 0 && grid[r][c - 1] == cur {
-            output -= 1;
-        }
-
-        output
-    }
-}
-
-fn make_get_nbrs(grid: &[Vec<char>]) -> impl Fn((usize, usize)) -> Vec<(usize, usize)> + '_ {
-    let height = grid.len();
-    let width = grid[0].len();
-    move |t: (usize, usize)| {
-        let r = t.0;
-        let c = t.1;
-        let cur = grid[r][c];
-        let mut nbrs: Vec<(usize, usize)> = Vec::new();
-
-        if r + 1 < height && grid[r + 1][c] == cur {
-            nbrs.push((r + 1, c));
-        }
-
-        if c + 1 < width && grid[r][c + 1] == cur {
-            nbrs.push((r, c + 1));
-        }
-
-        if r > 0 && grid[r - 1][c] == cur {
-            nbrs.push((r - 1, c));
-        }
-
-        if c > 0 && grid[r][c - 1] == cur {
-            nbrs.push((r, c - 1));
-        }
-
-        nbrs
-    }
-}
-
 /// # Panics
 ///
 /// stfu
 pub fn run1(lines: &mut LinesIterator) -> String {
-    let grid: Vec<_> = lines_to_grid_of_chars(lines).collect();
-    let get_nbrs = make_get_nbrs(&grid);
-    let get_num_edges = make_get_num_edges(&grid);
+    let grid: Vec<Vec<char>> = lines_to_grid_of_chars(lines).collect();
     let mut ut: UpTree<(usize, usize)> = UpTree::new();
+    let mut q = VecDeque::new();
+    let mut seen: HashSet<(usize, usize)> = HashSet::new();
 
     let height = grid.len();
     let width = grid[0].len();
 
-    let mut q = VecDeque::new();
-    let mut seen: HashSet<(usize, usize)> = HashSet::new();
-
-    for i in 0..height {
-        for j in 0..width {
+    let mut nbrs: Vec<Vec<Vec<(usize, usize)>>> = Vec::with_capacity(height);
+    for (i, row) in grid.iter().enumerate() {
+        nbrs.push(Vec::with_capacity(width));
+        for (j, cur) in row.iter().enumerate() {
+            nbrs[i].push(Vec::new());
             q.push_back((i, j));
             ut.insert_root((i, j));
+
+            if i > 0 && grid[i - 1][j] == *cur {
+                nbrs[i][j].push((i - 1, j));
+            }
+
+            if j + 1 < width && grid[i][j + 1] == *cur {
+                nbrs[i][j].push((i, j + 1));
+            }
+
+            if i + 1 < height && grid[i + 1][j] == *cur {
+                nbrs[i][j].push((i + 1, j));
+            }
+
+            if j > 0 && grid[i][j - 1] == *cur {
+                nbrs[i][j].push((i, j - 1));
+            }
         }
     }
 
     while !q.is_empty() {
         let v = q.pop_back().unwrap();
-        for w in get_nbrs(v) {
-            if !seen.contains(&w) {
-                ut.union(&w, &v);
+        for w in &nbrs[v.0][v.1] {
+            if !seen.contains(w) {
+                ut.union(w, &v);
             }
         }
         seen.insert(v);
@@ -100,7 +58,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
         let area = region.len();
         let mut perimeter = 0;
         for (v, ()) in region {
-            perimeter += get_num_edges(*v);
+            perimeter += 4 - nbrs[v.0][v.1].len();
         }
         output += area * perimeter;
     }
