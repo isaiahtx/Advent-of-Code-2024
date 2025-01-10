@@ -1,30 +1,29 @@
-use crate::graph::{num_of_paths, num_reachable_targets};
+use crate::graph::{num_paths, num_reachable_targets};
 use crate::utils::{lines_to_grid_of_usize, LinesIterator};
-use std::collections::HashSet;
 
-fn make_get_edges(map: &[Vec<usize>]) -> impl Fn((usize, usize)) -> HashSet<(usize, usize)> + '_ {
+fn make_get_edges(map: &[Vec<usize>]) -> impl Fn((usize, usize)) -> Vec<(usize, usize)> + '_ {
     let height = map.len();
     let width = map[0].len();
     move |t: (usize, usize)| {
         let r = t.0;
         let c = t.1;
         let cur = map[r][c];
-        let mut edges: HashSet<(usize, usize)> = HashSet::new();
+        let mut edges: Vec<(usize, usize)> = Vec::new();
 
         if r + 1 < height && map[r + 1][c] == cur + 1 {
-            edges.insert((r + 1, c));
+            edges.push((r + 1, c));
         }
 
         if c + 1 < width && map[r][c + 1] == cur + 1 {
-            edges.insert((r, c + 1));
+            edges.push((r, c + 1));
         }
 
         if r > 0 && map[r - 1][c] == cur + 1 {
-            edges.insert((r - 1, c));
+            edges.push((r - 1, c));
         }
 
         if c > 0 && map[r][c - 1] == cur + 1 {
-            edges.insert((r, c - 1));
+            edges.push((r, c - 1));
         }
 
         edges
@@ -65,7 +64,7 @@ pub fn run2(lines: &mut LinesIterator) -> String {
     for (r, row) in map.iter().enumerate() {
         for (c, character) in row.iter().enumerate() {
             if *character == 0 {
-                output += num_of_paths((r, c), &is_9, &get_edges);
+                output += num_paths((r, c), &is_9, &get_edges);
             }
         }
     }

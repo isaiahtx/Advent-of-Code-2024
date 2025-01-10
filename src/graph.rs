@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 use crate::bimap::BiMap;
+use std::cmp::{Ordering, Reverse};
 use std::collections::hash_map::Entry::Vacant;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::hash::Hash;
 
@@ -10,6 +11,10 @@ pub struct Graph<T, W = ()> {
     verts: BiMap<T>,
     children: Vec<HashSet<(usize, W)>>,
     undirected: bool,
+}
+
+pub fn get_type<T>(_: &T) -> String {
+    format!("{:?}", std::any::type_name::<T>())
 }
 
 impl<T, W> Graph<T, W>
@@ -43,7 +48,7 @@ pub fn num_reachable_targets<T, F1, F2>(src: T, is_tgt: F1, get_edges: F2) -> us
 where
     T: Eq + Hash + Copy + Debug,
     F1: Fn(T) -> bool,
-    F2: Fn(T) -> HashSet<T>,
+    F2: Fn(T) -> Vec<T>,
 {
     let mut result = usize::from(is_tgt(src));
 
@@ -78,7 +83,7 @@ where
 pub fn exists_path<T, F>(src: T, tgt: T, get_edges: F) -> bool
 where
     T: Eq + Hash + Copy + Debug,
-    F: Fn(T) -> HashSet<T>,
+    F: Fn(T) -> Vec<T>,
 {
     if src == tgt {
         return true;
@@ -112,6 +117,96 @@ where
     false
 }
 
+pub fn shortest_path_cost<T, F>(src: T, tgt: T, get_edges: F) -> Option<usize>
+where
+    T: Eq + Hash + Copy + Debug + Ord,
+    F: Fn(T) -> Vec<(usize, T)>,
+{
+    if src == tgt {
+        return Some(0);
+    }
+
+    let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
+    let mut dist: HashMap<T, usize> = HashMap::new();
+    let mut removed_from_pq: HashSet<T> = HashSet::new();
+
+    pq.push((Reverse(usize::MIN), src));
+    dist.insert(src, usize::MIN);
+
+    while !pq.is_empty() {
+        if let Some((Reverse(distance), u)) = pq.pop() {
+            if u == tgt {
+                return Some(dist[&u]);
+            }
+
+            removed_from_pq.insert(u);
+
+            for (weight, nbr) in get_edges(u) {
+                if removed_from_pq.contains(&nbr) {
+                } else {
+                    let alt = distance + weight;
+                    if !dist.contains_key(&nbr) || alt < dist[&nbr] {
+                        dist.insert(nbr, alt);
+                        pq.push((Reverse(alt), nbr));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+pub fn shortest_path_weighted<T, F>(src: T, tgt: T, get_edges: F) -> Option<(Vec<T>, usize)>
+where
+    T: Eq + Hash + Copy + Debug + Ord,
+    F: Fn(T) -> Vec<(usize, T)>,
+{
+    if src == tgt {
+        return Some((Vec::from([src]), 0));
+    }
+
+    let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
+    let mut dist: HashMap<T, usize> = HashMap::new();
+    let mut prev: HashMap<T, Option<T>> = HashMap::new();
+    let mut removed_from_pq: HashSet<T> = HashSet::new();
+
+    pq.push((Reverse(usize::MIN), src));
+    dist.insert(src, usize::MIN);
+    prev.insert(src, None);
+
+    while !pq.is_empty() {
+        if let Some((Reverse(distance), u)) = pq.pop() {
+            if u == tgt {
+                let mut path = VecDeque::new();
+                let mut cur = u;
+                path.push_front(u);
+                while let Some(parent) = prev[&cur] {
+                    path.push_front(parent);
+                    cur = parent;
+                }
+                return Some((path.into_iter().collect(), dist[&u]));
+            }
+
+            removed_from_pq.insert(u);
+
+            for (weight, nbr) in get_edges(u) {
+                if removed_from_pq.contains(&nbr) {
+                } else {
+                    let alt = distance + weight;
+                    if !dist.contains_key(&nbr) || alt < dist[&nbr] {
+                        dist.insert(nbr, alt);
+                        prev.insert(nbr, Some(u));
+                        pq.push((Reverse(alt), nbr));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 /// Takes in a `src: T`, a `tgt: T`, and a function
 /// `get_edges: T -> HashSet<T>`.
 ///
@@ -121,7 +216,7 @@ where
 pub fn shortest_path<T, F>(src: T, tgt: T, get_edges: F) -> Option<Vec<T>>
 where
     T: Eq + Hash + Copy + Debug,
-    F: Fn(T) -> HashSet<T>,
+    F: Fn(T) -> Vec<T>,
 {
     if src == tgt {
         return Some(Vec::from([src]));
@@ -165,8 +260,7 @@ where
                     let mut output = Vec::with_capacity(output_length);
 
                     // This provides us a mutable reference to the
-                    // un-initialized capacity of the output vector (right now,
-                    // it is completely un-initialized)
+                    // un-initialized capacity of the output vector.
                     let rem = output.spare_capacity_mut();
 
                     // To start, we will set the target as the last vertex
@@ -175,7 +269,7 @@ where
                     rem[output_length - 1].write(cur);
 
                     // Now we iterate over the remaining steps we took, filling
-                    // up the output vector;
+                    // up the output vector right to left;
                     let mut i = 1;
                     while let Some(parent) = visited[&cur] {
                         i += 1;
@@ -199,11 +293,11 @@ where
     None
 }
 
-pub fn num_of_paths<T, F1, F2>(src: T, is_tgt: &F1, get_edges: &F2) -> usize
+pub fn num_paths<T, F1, F2>(src: T, is_tgt: &F1, get_edges: &F2) -> usize
 where
     T: Eq + Hash + Debug + Copy,
     F1: Fn(T) -> bool,
-    F2: Fn(T) -> HashSet<T>,
+    F2: Fn(T) -> Vec<T>,
 {
     // Assuming src != tgt
     // assert_ne!(src, tgt);
@@ -213,7 +307,7 @@ where
         if is_tgt(nbr) {
             count += 1;
         } else {
-            count += num_of_paths(nbr, is_tgt, get_edges);
+            count += num_paths(nbr, is_tgt, get_edges);
         }
     }
     count
@@ -230,32 +324,32 @@ mod tests {
         // 4 6 7 8
         //     9
         let get_edges = |x: u8| match x {
-            0 => HashSet::from([1, 2]),
-            1 => HashSet::from([3]),
-            2 => HashSet::from([4]),
-            3 => HashSet::from([5]),
-            4 => HashSet::from([6]),
-            5 | 6 => HashSet::from([7]),
-            7 => HashSet::from([8, 9]),
-            _ => HashSet::new(),
+            0 => vec![1, 2],
+            1 => vec![3],
+            2 => vec![4],
+            3 => vec![5],
+            4 => vec![6],
+            5 | 6 => vec![7],
+            7 => vec![8, 9],
+            _ => Vec::new(),
         };
 
         let is_tgt = |x: u8| x >= 8;
 
-        assert_eq!(num_of_paths(0, &is_tgt, &get_edges), 4);
+        assert_eq!(num_paths(0, &is_tgt, &get_edges), 4);
     }
 
     #[test]
     fn test_num_reachable_targets() {
         let get_edges = |x: u8| {
             if x == 0 {
-                HashSet::from([1, u8::MAX])
+                vec![1, u8::MAX]
             } else if x < u8::MAX {
-                HashSet::from([x - 1, x + 1])
+                vec![x - 1, x + 1]
             } else if x == u8::MAX {
-                HashSet::from([0, u8::MAX - 1])
+                vec![0, u8::MAX - 1]
             } else {
-                HashSet::new()
+                Vec::new()
             }
         };
 
@@ -286,13 +380,13 @@ mod tests {
     #[test]
     fn test_exists_path() {
         let get_edges = |x: u8| match x {
-            0 => HashSet::from([1, 5]),
-            1 => HashSet::from([0, 2]),
-            2 => HashSet::from([1, 3]),
-            3 => HashSet::from([2, 4]),
-            4 => HashSet::from([3, 5]),
-            5 => HashSet::from([4, 0]),
-            _ => HashSet::new(),
+            0 => vec![1, 5],
+            1 => vec![0, 2],
+            2 => vec![1, 3],
+            3 => vec![2, 4],
+            4 => vec![3, 5],
+            5 => vec![4, 0],
+            _ => Vec::new(),
         };
 
         assert!(exists_path(0, 5, get_edges));
@@ -304,13 +398,13 @@ mod tests {
     #[test]
     fn test_shortest_path_two_paths() {
         let get_edges = |x: u8| match x {
-            0 => HashSet::from([1, 5]),
-            1 => HashSet::from([0, 2]),
-            2 => HashSet::from([1, 3]),
-            3 => HashSet::from([2, 4]),
-            4 => HashSet::from([3, 5]),
-            5 => HashSet::from([4, 0]),
-            _ => HashSet::new(),
+            0 => vec![1, 5],
+            1 => vec![0, 2],
+            2 => vec![1, 3],
+            3 => vec![2, 4],
+            4 => vec![3, 5],
+            5 => vec![4, 0],
+            _ => Vec::new(),
         };
 
         assert_eq!(shortest_path(0, 5, get_edges), Some(Vec::from([0, 5])));
@@ -321,7 +415,7 @@ mod tests {
 
     #[test]
     fn test_shortest_path_no_path() {
-        let output = shortest_path(0, 1, |_| HashSet::new());
+        let output = shortest_path(0, 1, |_| Vec::new());
         assert_eq!(output, None);
     }
 
@@ -329,5 +423,46 @@ mod tests {
     fn test_graph() {
         let g: Graph<&str, f64> = Graph::default();
         assert!(!g.undirected);
+    }
+
+    #[test]
+    fn w_test_shortest_path() {
+        let get_edges = |x: u8| match x {
+            0 => vec![(1, 1), (1, 5)],
+            1 => vec![(1, 0), (1, 2)],
+            2 => vec![(1, 1), (1, 3)],
+            3 => vec![(1, 2), (1, 4)],
+            4 => vec![(1, 3), (1, 5)],
+            5 => vec![(1, 4), (1, 0)],
+            6 => vec![(10, 7), (1, 8)],
+            7 => vec![(10, 6), (5, 8)],
+            8 => vec![(1, 6), (5, 7)],
+            _ => Vec::new(),
+        };
+
+        assert_eq!(
+            shortest_path_weighted(0, 5, get_edges),
+            Some((vec![0, 5], 1))
+        );
+        assert_eq!(
+            shortest_path_weighted(0, 4, get_edges),
+            Some((vec![0, 5, 4], 2))
+        );
+        assert_eq!(
+            shortest_path_weighted(0, 2, get_edges),
+            Some((vec![0, 1, 2], 2))
+        );
+        assert_eq!(shortest_path_weighted(0, 0, get_edges), Some((vec![0], 0)));
+        assert_eq!(
+            shortest_path_weighted(6, 7, get_edges),
+            Some((vec![6, 8, 7], 6))
+        );
+        assert_eq!(shortest_path_cost(6, 7, get_edges), Some(6));
+    }
+
+    #[test]
+    fn w_test_shortest_path_no_path() {
+        assert_eq!(shortest_path_weighted(0, 1, |_| Vec::new()), None);
+        assert_eq!(shortest_path_cost(0, 1, |_| Vec::new()), None);
     }
 }
