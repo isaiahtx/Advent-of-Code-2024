@@ -309,6 +309,51 @@ where
     count
 }
 
+pub fn shortest_path_cost_multiple_tgts<T, F1, F2>(
+    src: T,
+    is_tgt: F1,
+    get_edges: F2,
+) -> Option<usize>
+where
+    T: Eq + Hash + Copy + Debug + Ord,
+    F1: Fn(T) -> bool,
+    F2: Fn(T) -> Vec<(usize, T)>,
+{
+    if is_tgt(src) {
+        return Some(0);
+    }
+
+    let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
+    let mut dist: HashMap<T, usize> = HashMap::new();
+    let mut removed_from_pq: HashSet<T> = HashSet::new();
+
+    pq.push((Reverse(usize::MIN), src));
+    dist.insert(src, usize::MIN);
+
+    while !pq.is_empty() {
+        if let Some((Reverse(distance), u)) = pq.pop() {
+            if is_tgt(u) {
+                return Some(dist[&u]);
+            }
+
+            removed_from_pq.insert(u);
+
+            for (weight, nbr) in get_edges(u) {
+                if removed_from_pq.contains(&nbr) {
+                } else {
+                    let alt = distance + weight;
+                    if !dist.contains_key(&nbr) || alt < dist[&nbr] {
+                        dist.insert(nbr, alt);
+                        pq.push((Reverse(alt), nbr));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

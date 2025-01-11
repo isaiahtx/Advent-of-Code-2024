@@ -119,6 +119,38 @@ impl Direction {
     }
 
     #[must_use]
+    pub const fn step_coords_cardinal_unchecked(self, coords: Coords) -> Coords {
+        match self {
+            Self::N => (coords.0 - 1, coords.1),
+            Self::E => (coords.0, coords.1 + 1),
+            Self::S => (coords.0 + 1, coords.1),
+            Self::W => (coords.0, coords.1 - 1),
+            _ => panic!("only takes cardinal values!"),
+        }
+    }
+
+    #[must_use]
+    pub const fn step_coords_unchecked(self, coords: Coords) -> Coords {
+        let (dx, dy) = self.to_coords();
+        let mut x = coords.0;
+        let mut y = coords.1;
+
+        if dx < 0 {
+            x -= 1;
+        } else if dx > 0 {
+            x += 1;
+        }
+
+        if dy < 0 {
+            y -= 1;
+        } else if dy > 0 {
+            y += 1;
+        }
+
+        (x, y)
+    }
+
+    #[must_use]
     pub const fn step_coords(self, coords: Coords, height: usize, width: usize) -> Option<Coords> {
         let mut x = coords.0;
         let mut y = coords.1;
