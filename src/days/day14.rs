@@ -1,8 +1,7 @@
 use crate::utils::LinesIterator;
-use std::cmp::Ordering::{Equal, Greater, Less};
+use std::cmp::Ordering::{Greater, Less};
 use std::io;
 use std::io::Write;
-use std::marker::PhantomData;
 
 type Coords = (i32, i32);
 type Velocity = (i32, i32);

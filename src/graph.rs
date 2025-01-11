@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::bimap::BiMap;
-use std::cmp::{Ordering, Reverse};
+use std::cmp::Reverse;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
@@ -11,10 +11,6 @@ pub struct Graph<T, W = ()> {
     verts: BiMap<T>,
     children: Vec<HashSet<(usize, W)>>,
     undirected: bool,
-}
-
-pub fn get_type<T>(_: &T) -> String {
-    format!("{:?}", std::any::type_name::<T>())
 }
 
 impl<T, W> Graph<T, W>

@@ -1,5 +1,6 @@
 pub mod bimap;
 pub mod days;
+pub mod direction;
 pub mod graph;
 pub mod memoizer;
 pub mod uptree;
