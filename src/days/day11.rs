@@ -31,6 +31,7 @@ fn blink(stones: &[u128]) -> Vec<u128> {
         .collect()
 }
 
+/// # Panics
 pub fn run1(lines: &mut LinesIterator) -> String {
     let mut nums: Vec<u128> = lines
         .next()
@@ -97,6 +98,7 @@ impl StoneCollapser {
     }
 }
 
+/// # Panics
 pub fn run2(lines: &mut LinesIterator) -> String {
     let nums: Vec<u128> = lines
         .next()

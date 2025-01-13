@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub type Coords = (usize, usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -55,6 +53,20 @@ impl Direction {
             Self::SW => Self::NW,
             Self::W => Self::N,
             Self::NW => Self::NE,
+        }
+    }
+
+    #[must_use]
+    pub const fn turn_left(self) -> Self {
+        match self {
+            Self::N => Self::W,
+            Self::W => Self::S,
+            Self::S => Self::E,
+            Self::E => Self::N,
+            Self::NE => Self::NW,
+            Self::NW => Self::SW,
+            Self::SW => Self::SE,
+            Self::SE => Self::NE,
         }
     }
 

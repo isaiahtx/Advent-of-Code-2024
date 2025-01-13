@@ -17,7 +17,7 @@ impl Machine {
     }
 
     fn cost(&self) -> Option<u64> {
-        let get_edges = |coords: (u64, u64)| {
+        let mut get_edges = |coords: (u64, u64)| {
             let mut output = Vec::new();
 
             let ax = coords.0 + self.a.0;
@@ -35,7 +35,7 @@ impl Machine {
             output
         };
 
-        shortest_path_cost((0, 0), self.prize, get_edges).map(|x| x as u64)
+        shortest_path_cost((0, 0), |x| x == self.prize, &mut get_edges).map(|x| x as u64)
     }
 
     /// Write A = [a.0, b.0 ; a.1, b.1] and p = (prize.0, prize.1). Then a
@@ -162,7 +162,7 @@ fn parse_input_2(lines: &mut LinesIterator) -> Vec<Machine> {
         output.push(Machine::new(
             (a1, a2),
             (b1, b2),
-            (p1 + 10000000000000, p2 + 10000000000000),
+            (p1 + 10_000_000_000_000, p2 + 10_000_000_000_000),
         ));
 
         if lines.next().is_none() {

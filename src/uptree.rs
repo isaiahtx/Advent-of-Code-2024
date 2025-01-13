@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::bimap::{BiMap, InsertResult::Contained, InsertResult::DidNotContain};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -40,10 +39,6 @@ where
     #[must_use]
     pub fn contains(&self, node: &T) -> bool {
         self.dict.contains_value(node)
-    }
-
-    fn id_is_root(&self, id: usize) -> Option<bool> {
-        self.up.get(id).map(|(p, _)| Some(p.is_none()))?
     }
 
     pub fn is_root(&self, node: &T) -> Option<bool> {
@@ -140,8 +135,9 @@ where
 
     /// # Panics
     ///
-    /// Will never
+    /// used in tests
     #[must_use]
+    #[allow(dead_code)]
     fn up_to_original(self) -> HashSet<(T, Option<T>, W)>
     where
         W: Hash + Eq,
@@ -229,6 +225,7 @@ where
         false
     }
 
+    /// # Panics
     pub fn get_sizes(&mut self) -> Vec<(T, usize)> {
         let mut sets: HashMap<usize, Vec<usize>> = HashMap::new();
         for id in 0..self.num_nodes {
@@ -242,6 +239,7 @@ where
             .collect()
     }
 
+    /// # Panics
     pub fn flatten(&mut self) -> Vec<Vec<(&T, &W)>> {
         let mut sets: HashMap<usize, Vec<usize>> = HashMap::new();
         for id in 0..self.num_nodes {

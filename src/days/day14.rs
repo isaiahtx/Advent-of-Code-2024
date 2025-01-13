@@ -1,7 +1,5 @@
 use crate::utils::LinesIterator;
 use std::cmp::Ordering::{Greater, Less};
-use std::io;
-use std::io::Write;
 
 type Coords = (i32, i32);
 type Velocity = (i32, i32);
@@ -70,11 +68,11 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{output}")
 }
 
-fn chars_grid_to_string(chars: &Vec<Vec<char>>) -> String {
+fn chars_grid_to_string(chars: &[Vec<char>]) -> String {
     chars
-        .into_iter()
+        .iter()
         .map(|l| {
-            let mut s = l.into_iter().collect::<String>();
+            let mut s = l.iter().collect::<String>();
             s.push('\n');
             s
         })
@@ -95,28 +93,29 @@ fn robots_to_grid(robots: &Vec<(Coords, Velocity)>) -> Vec<Vec<char>> {
     chars
 }
 
+/// # Panics
 pub fn run2(lines: &mut LinesIterator) -> String {
     let mut robots = parse_input(lines);
-    let mut _b = String::new();
     let mut n = 0;
 
-    loop {
+    'outer: loop {
         let chars = robots_to_grid(&robots);
 
         for (i, row) in chars.iter().enumerate() {
             for (j, c) in row.iter().enumerate() {
-                if i + 4 < HEIGHT as usize
+                if i + 9 < HEIGHT as usize
                     && *c == '█'
                     && chars[i + 1][j] == '█'
                     && chars[i + 2][j] == '█'
                     && chars[i + 3][j] == '█'
                     && chars[i + 4][j] == '█'
+                    && chars[i + 5][j] == '█'
+                    && chars[i + 6][j] == '█'
+                    && chars[i + 7][j] == '█'
+                    && chars[i + 8][j] == '█'
+                    && chars[i + 9][j] == '█'
                 {
-                    println!("\r{}\n\n", chars_grid_to_string(&chars));
-                    println!("{n}");
-                    io::stdout().flush().unwrap();
-
-                    let _ = io::stdin().read_line(&mut _b);
+                    break 'outer;
                 }
             }
         }
@@ -124,4 +123,6 @@ pub fn run2(lines: &mut LinesIterator) -> String {
         robots = robots.into_iter().map(|r| update(r, 1)).collect();
         n += 1;
     }
+
+    format!("{n}")
 }

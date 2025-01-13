@@ -2,6 +2,7 @@ use crate::utils::LinesIterator;
 
 use regex::Regex;
 
+/// # Panics
 pub fn run1(lines: &mut LinesIterator) -> String {
     let mut result = 0;
     for line in lines.map(Result::unwrap) {
@@ -10,6 +11,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{result}")
 }
 
+/// # Panics
 pub fn run2(lines: &mut LinesIterator) -> String {
     let mut result = 0;
     let mut do_multiply = true;

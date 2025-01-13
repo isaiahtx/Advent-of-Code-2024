@@ -1,5 +1,6 @@
 use crate::utils::LinesIterator;
 
+/// # Panics
 pub fn run1(lines: &mut LinesIterator) -> String {
     let data = lines
         .map(Result::unwrap)
@@ -72,16 +73,17 @@ fn evaluate_2(v: &[u64], ops: u64) -> Result<u64, TestError> {
     let mut v = v.iter();
     let mut output = *v.next().unwrap();
 
-    for num in v {
+    for &num in v {
         if ops % 3 == 0 {
             output += num;
         } else if ops % 3 == 1 {
             output *= num;
         } else {
-            output = concatenate(output, *num).unwrap();
+            output = concatenate(output, num).unwrap();
         }
         ops /= 3;
     }
+
     Ok(output)
 }
 
@@ -92,6 +94,7 @@ fn test_2(target: u64, v: &[u64]) -> Result<u64, TestError> {
         .ok_or(TestError::TargetNotFound)
 }
 
+/// # Panics
 pub fn run2(lines: &mut LinesIterator) -> String {
     let data = lines
         .map(Result::unwrap)

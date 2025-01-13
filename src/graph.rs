@@ -1,46 +1,12 @@
-#![allow(dead_code)]
-use crate::bimap::BiMap;
 use std::cmp::Reverse;
 use std::collections::hash_map::Entry::Vacant;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::hash::Hash;
 
-#[derive(Debug, Clone, Default)]
-pub struct Graph<T, W = ()> {
-    verts: BiMap<T>,
-    children: Vec<HashSet<(usize, W)>>,
-    undirected: bool,
-}
-
-impl<T, W> Graph<T, W>
-where
-    T: Hash + Eq + Clone,
-{
-    #[must_use]
-    fn new() -> Self {
-        Self {
-            verts: BiMap::new(),
-            children: Vec::new(),
-            undirected: false,
-        }
-    }
-
-    // Makes a directed graph undirected by duplicating all of the edges
-    fn undirect(&mut self)
-    where
-        W: Hash + Eq + Copy + Debug,
-    {
-        for (i, edge_list) in self.children.clone().into_iter().enumerate() {
-            for (j, weight) in edge_list {
-                self.children[j].insert((i, weight));
-            }
-        }
-        self.undirected = true;
-    }
-}
-
-pub fn num_reachable_targets<T, F1, F2>(src: T, is_tgt: F1, get_edges: F2) -> usize
+/// Gets the number of targets that are reachable from the source in an
+/// **unweighted** graph.
+pub fn num_reachable_targets<T, F1, F2>(src: T, is_tgt: F1, get_children: F2) -> usize
 where
     T: Eq + Hash + Copy + Debug,
     F1: Fn(T) -> bool,
@@ -58,17 +24,17 @@ where
 
     // Pick the nearest vertex u that has been visited
     while let Some(u) = q.pop_front() {
-        for nbr in get_edges(u) {
+        for nbr in get_children(u) {
             // For each nbr of u that has not been visited...
             if visited.insert(nbr) {
-                // Otherwise, mark nbr as visited and add it to the queue to
-                // check its neighbors.
-                q.push_back(nbr);
-
                 // Count nbr if it is a target
                 if is_tgt(nbr) {
                     result += 1;
                 }
+
+                // Mark nbr as visited and add it to the queue to check its
+                // neighbors.
+                q.push_back(nbr);
             }
         }
     }
@@ -76,7 +42,8 @@ where
     result
 }
 
-pub fn exists_path<T, F>(src: T, tgt: T, get_edges: F) -> bool
+/// Outputs whether or not there exists a path from the source to the target.
+pub fn exists_path<T, F>(src: T, tgt: T, get_children: F) -> bool
 where
     T: Eq + Hash + Copy + Debug,
     F: Fn(T) -> Vec<T>,
@@ -95,7 +62,7 @@ where
 
     // Pick the nearest vertex u that has been visited
     while let Some(u) = q.pop_front() {
-        for nbr in get_edges(u) {
+        for nbr in get_children(u) {
             // For each nbr of u that has not been visited...
             if visited.insert(nbr) {
                 // If nbr is the target, return true
@@ -113,15 +80,13 @@ where
     false
 }
 
-pub fn shortest_path_cost<T, F>(src: T, tgt: T, get_edges: F) -> Option<usize>
+/// Outputs map containing the distance of any node from the source in a
+/// **weighted** graph, provided the node is reachable from the source.
+pub fn dijkstra<T, F>(src: T, get_children: &mut F) -> HashMap<T, usize>
 where
     T: Eq + Hash + Copy + Debug + Ord,
-    F: Fn(T) -> Vec<(usize, T)>,
+    F: FnMut(T) -> Vec<(usize, T)>,
 {
-    if src == tgt {
-        return Some(0);
-    }
-
     let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
     let mut dist: HashMap<T, usize> = HashMap::new();
     let mut removed_from_pq: HashSet<T> = HashSet::new();
@@ -131,13 +96,8 @@ where
 
     while !pq.is_empty() {
         if let Some((Reverse(distance), u)) = pq.pop() {
-            if u == tgt {
-                return Some(dist[&u]);
-            }
-
             removed_from_pq.insert(u);
-
-            for (weight, nbr) in get_edges(u) {
+            for (weight, nbr) in get_children(u) {
                 if removed_from_pq.contains(&nbr) {
                 } else {
                     let alt = distance + weight;
@@ -149,67 +109,12 @@ where
             }
         }
     }
-
-    None
+    dist
 }
 
-pub fn shortest_path_weighted<T, F>(src: T, tgt: T, get_edges: F) -> Option<(Vec<T>, usize)>
-where
-    T: Eq + Hash + Copy + Debug + Ord,
-    F: Fn(T) -> Vec<(usize, T)>,
-{
-    if src == tgt {
-        return Some((Vec::from([src]), 0));
-    }
-
-    let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
-    let mut dist: HashMap<T, usize> = HashMap::new();
-    let mut prev: HashMap<T, Option<T>> = HashMap::new();
-    let mut removed_from_pq: HashSet<T> = HashSet::new();
-
-    pq.push((Reverse(usize::MIN), src));
-    dist.insert(src, usize::MIN);
-    prev.insert(src, None);
-
-    while !pq.is_empty() {
-        if let Some((Reverse(distance), u)) = pq.pop() {
-            if u == tgt {
-                let mut path = VecDeque::new();
-                let mut cur = u;
-                path.push_front(u);
-                while let Some(parent) = prev[&cur] {
-                    path.push_front(parent);
-                    cur = parent;
-                }
-                return Some((path.into_iter().collect(), dist[&u]));
-            }
-
-            removed_from_pq.insert(u);
-
-            for (weight, nbr) in get_edges(u) {
-                if removed_from_pq.contains(&nbr) {
-                } else {
-                    let alt = distance + weight;
-                    if !dist.contains_key(&nbr) || alt < dist[&nbr] {
-                        dist.insert(nbr, alt);
-                        prev.insert(nbr, Some(u));
-                        pq.push((Reverse(alt), nbr));
-                    }
-                }
-            }
-        }
-    }
-
-    None
-}
-
-/// Takes in a `src: T`, a `tgt: T`, and a function
-/// `get_edges: T -> HashSet<T>`.
-///
-/// Returns `None` if no path can be found from `src` to `tgt`, otherwise
-/// returns a vector containing the vertices visited in a shortest path from
-/// `src` to `tgt`.
-pub fn shortest_path<T, F>(src: T, tgt: T, get_edges: F) -> Option<Vec<T>>
+/// Outputs a shortest path from a source to a target in an **unweighted**
+/// graph.
+pub fn shortest_path<T, F>(src: T, tgt: T, get_children: F) -> Option<Vec<T>>
 where
     T: Eq + Hash + Copy + Debug,
     F: Fn(T) -> Vec<T>,
@@ -230,7 +135,7 @@ where
 
     // Pick the nearest vertex u that has been visited
     while let Some((u, dist)) = q.pop_front() {
-        for nbr in get_edges(u) {
+        for nbr in get_children(u) {
             if let Vacant(e) = visited.entry(nbr) {
                 // For each neighbor nbr of u that has not been visited, mark
                 // it as visited with parent u, and set its distance to u's
@@ -289,7 +194,68 @@ where
     None
 }
 
-pub fn num_paths<T, F1, F2>(src: T, is_tgt: &F1, get_edges: &F2) -> usize
+/// Outputs a shortest path from a source to a target in a **weighted** graph.
+pub fn shortest_path_weighted<T, F1, F2>(
+    src: T,
+    is_tgt: &F1,
+    get_children: &mut F2,
+) -> Option<Vec<(T, usize)>>
+where
+    T: Eq + Hash + Copy + Debug + Ord,
+    F1: Fn(T) -> bool,
+    F2: FnMut(T) -> Vec<(usize, T)>,
+{
+    if is_tgt(src) {
+        return Some(Vec::from([(src, 0)]));
+    }
+
+    let mut pq: BinaryHeap<(Reverse<usize>, T)> = BinaryHeap::new();
+    let mut dist: HashMap<T, usize> = HashMap::new();
+    let mut prev: HashMap<T, Option<T>> = HashMap::new();
+    let mut removed_from_pq: HashSet<T> = HashSet::new();
+
+    pq.push((Reverse(usize::MIN), src));
+    dist.insert(src, usize::MIN);
+    prev.insert(src, None);
+
+    while !pq.is_empty() {
+        if let Some((Reverse(distance), u)) = pq.pop() {
+            if is_tgt(u) {
+                let mut path = VecDeque::new();
+                let mut cur = u;
+                path.push_front((u, distance));
+                while let Some(parent) = prev[&cur] {
+                    path.push_front((parent, dist[&parent]));
+                    cur = parent;
+                }
+                return Some(path.into_iter().collect());
+            }
+
+            removed_from_pq.insert(u);
+
+            for (weight, nbr) in get_children(u) {
+                if removed_from_pq.contains(&nbr) {
+                } else {
+                    let alt = distance + weight;
+                    if !dist.contains_key(&nbr) || alt < dist[&nbr] {
+                        dist.insert(nbr, alt);
+                        prev.insert(nbr, Some(u));
+                        pq.push((Reverse(alt), nbr));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Outputs the number of paths from source to a target in an **unweighted**
+/// graph, where we are assuming the source is not a target.
+///
+/// Uses DFS algorithm, could maybe be made more efficient by swithcing to a
+/// BFS algorithm.
+pub fn num_paths<T, F1, F2>(src: T, is_tgt: &F1, get_children: &F2) -> usize
 where
     T: Eq + Hash + Debug + Copy,
     F1: Fn(T) -> bool,
@@ -299,25 +265,23 @@ where
     // assert_ne!(src, tgt);
 
     let mut count = 0;
-    for nbr in get_edges(src) {
+    for nbr in get_children(src) {
         if is_tgt(nbr) {
             count += 1;
         } else {
-            count += num_paths(nbr, is_tgt, get_edges);
+            count += num_paths(nbr, is_tgt, get_children);
         }
     }
     count
 }
 
-pub fn shortest_path_cost_multiple_tgts<T, F1, F2>(
-    src: T,
-    is_tgt: F1,
-    get_edges: F2,
-) -> Option<usize>
+/// Outputs the cost of a shortest path from a source node to a target node in
+/// a **weighted** graph.
+pub fn shortest_path_cost<T, F1, F2>(src: T, is_tgt: F1, get_children: &mut F2) -> Option<usize>
 where
     T: Eq + Hash + Copy + Debug + Ord,
     F1: Fn(T) -> bool,
-    F2: Fn(T) -> Vec<(usize, T)>,
+    F2: FnMut(T) -> Vec<(usize, T)>,
 {
     if is_tgt(src) {
         return Some(0);
@@ -333,12 +297,12 @@ where
     while !pq.is_empty() {
         if let Some((Reverse(distance), u)) = pq.pop() {
             if is_tgt(u) {
-                return Some(dist[&u]);
+                return Some(distance);
             }
 
             removed_from_pq.insert(u);
 
-            for (weight, nbr) in get_edges(u) {
+            for (weight, nbr) in get_children(u) {
                 if removed_from_pq.contains(&nbr) {
                 } else {
                     let alt = distance + weight;
@@ -354,6 +318,65 @@ where
     None
 }
 
+/// Outputs all nodes that
+pub fn get_nodes_in_cheapest_paths<T, F1, F2>(
+    src: T,
+    tgts: &[T],
+    get_children: &mut F1,
+    get_parents: &mut F2,
+) -> Option<HashSet<T>>
+where
+    T: Eq + Hash + Copy + Debug + Ord,
+    F1: FnMut(T) -> Vec<(usize, T)>,
+    F2: FnMut(T) -> Vec<(usize, T)>,
+{
+    let mut nodes = Vec::new();
+    let dist = dijkstra(src, get_children);
+    nodes.extend(dist.keys());
+
+    let mut min_cost = None;
+
+    for tgt in tgts {
+        let candidate_min_cost = dist.get(tgt);
+        if let Some(c) = candidate_min_cost {
+            match min_cost {
+                None => min_cost = Some(*c),
+                Some(mc) => {
+                    if *c < mc {
+                        min_cost = Some(*c);
+                    }
+                }
+            }
+        }
+    }
+
+    let min_cost = min_cost?;
+    let mut valid_tgts = Vec::new();
+
+    for tgt in tgts {
+        if dist.contains_key(tgt) && dist[tgt] == min_cost {
+            valid_tgts.push(tgt);
+        }
+    }
+
+    let mut output = HashSet::new();
+
+    for tgt in valid_tgts {
+        let rev_dist = dijkstra(*tgt, get_parents);
+        for t in &nodes {
+            if let Some(src_to_t) = dist.get(t) {
+                if let Some(tgt_to_t) = rev_dist.get(t) {
+                    if *src_to_t + *tgt_to_t == min_cost {
+                        output.insert(*t);
+                    }
+                }
+            }
+        }
+    }
+
+    Some(output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -364,7 +387,7 @@ mod tests {
         // 2   5
         // 4 6 7 8
         //     9
-        let get_edges = |x: u8| match x {
+        let get_children = |x: u8| match x {
             0 => vec![1, 2],
             1 => vec![3],
             2 => vec![4],
@@ -377,12 +400,12 @@ mod tests {
 
         let is_tgt = |x: u8| x >= 8;
 
-        assert_eq!(num_paths(0, &is_tgt, &get_edges), 4);
+        assert_eq!(num_paths(0, &is_tgt, &get_children), 4);
     }
 
     #[test]
     fn test_num_reachable_targets() {
-        let get_edges = |x: u8| {
+        let get_children = |x: u8| {
             if x == 0 {
                 vec![1, u8::MAX]
             } else if x < u8::MAX {
@@ -414,13 +437,13 @@ mod tests {
         let num_primes = (0..=u8::MAX).map(is_prime).filter(|&b| b).count();
 
         for n in 0..u8::MAX {
-            assert_eq!(num_reachable_targets(n, is_prime, get_edges), num_primes);
+            assert_eq!(num_reachable_targets(n, is_prime, get_children), num_primes);
         }
     }
 
     #[test]
     fn test_exists_path() {
-        let get_edges = |x: u8| match x {
+        let get_children = |x: u8| match x {
             0 => vec![1, 5],
             1 => vec![0, 2],
             2 => vec![1, 3],
@@ -430,15 +453,15 @@ mod tests {
             _ => Vec::new(),
         };
 
-        assert!(exists_path(0, 5, get_edges));
-        assert!(exists_path(0, 4, get_edges));
-        assert!(exists_path(0, 2, get_edges));
-        assert!(exists_path(0, 0, get_edges));
+        assert!(exists_path(0, 5, get_children));
+        assert!(exists_path(0, 4, get_children));
+        assert!(exists_path(0, 2, get_children));
+        assert!(exists_path(0, 0, get_children));
     }
 
     #[test]
     fn test_shortest_path_two_paths() {
-        let get_edges = |x: u8| match x {
+        let get_children = |x: u8| match x {
             0 => vec![1, 5],
             1 => vec![0, 2],
             2 => vec![1, 3],
@@ -448,10 +471,16 @@ mod tests {
             _ => Vec::new(),
         };
 
-        assert_eq!(shortest_path(0, 5, get_edges), Some(Vec::from([0, 5])));
-        assert_eq!(shortest_path(0, 4, get_edges), Some(Vec::from([0, 5, 4])));
-        assert_eq!(shortest_path(0, 2, get_edges), Some(Vec::from([0, 1, 2])));
-        assert_eq!(shortest_path(0, 0, get_edges), Some(Vec::from([0])));
+        assert_eq!(shortest_path(0, 5, get_children), Some(Vec::from([0, 5])));
+        assert_eq!(
+            shortest_path(0, 4, get_children),
+            Some(Vec::from([0, 5, 4]))
+        );
+        assert_eq!(
+            shortest_path(0, 2, get_children),
+            Some(Vec::from([0, 1, 2]))
+        );
+        assert_eq!(shortest_path(0, 0, get_children), Some(Vec::from([0])));
     }
 
     #[test]
@@ -461,14 +490,8 @@ mod tests {
     }
 
     #[test]
-    fn test_graph() {
-        let g: Graph<&str, f64> = Graph::default();
-        assert!(!g.undirected);
-    }
-
-    #[test]
     fn w_test_shortest_path() {
-        let get_edges = |x: u8| match x {
+        let mut get_children = |x: u8| match x {
             0 => vec![(1, 1), (1, 5)],
             1 => vec![(1, 0), (1, 2)],
             2 => vec![(1, 1), (1, 3)],
@@ -482,28 +505,37 @@ mod tests {
         };
 
         assert_eq!(
-            shortest_path_weighted(0, 5, get_edges),
-            Some((vec![0, 5], 1))
+            shortest_path_weighted(0, &|x| x == 5, &mut get_children),
+            Some(vec![(0, 0), (5, 1)])
         );
         assert_eq!(
-            shortest_path_weighted(0, 4, get_edges),
-            Some((vec![0, 5, 4], 2))
+            shortest_path_weighted(0, &|x| x == 4, &mut get_children),
+            Some(vec![(0, 0), (5, 1), (4, 2)])
         );
         assert_eq!(
-            shortest_path_weighted(0, 2, get_edges),
-            Some((vec![0, 1, 2], 2))
+            shortest_path_weighted(0, &|x| x == 2, &mut get_children),
+            Some(vec![(0, 0), (1, 1), (2, 2)])
         );
-        assert_eq!(shortest_path_weighted(0, 0, get_edges), Some((vec![0], 0)));
         assert_eq!(
-            shortest_path_weighted(6, 7, get_edges),
-            Some((vec![6, 8, 7], 6))
+            shortest_path_weighted(0, &|x| x == 0, &mut get_children),
+            Some(vec![(0, 0)])
         );
-        assert_eq!(shortest_path_cost(6, 7, get_edges), Some(6));
+        assert_eq!(
+            shortest_path_weighted(6, &|x| x == 7, &mut get_children),
+            Some(vec![(6, 0), (8, 1), (7, 6)])
+        );
+        assert_eq!(
+            shortest_path_cost(6, |x| x == 7, &mut get_children),
+            Some(6)
+        );
     }
 
     #[test]
     fn w_test_shortest_path_no_path() {
-        assert_eq!(shortest_path_weighted(0, 1, |_| Vec::new()), None);
-        assert_eq!(shortest_path_cost(0, 1, |_| Vec::new()), None);
+        assert_eq!(
+            shortest_path_weighted(0, &|x| x == 1, &mut |_| Vec::new()),
+            None
+        );
+        assert_eq!(shortest_path_cost(0, |x| x == 1, &mut |_| Vec::new()), None);
     }
 }

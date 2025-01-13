@@ -186,6 +186,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{}", board.guard_visited.keys().count())
 }
 
+/// # Panics
 pub fn run2(lines: &mut LinesIterator) -> String {
     let grid: Vec<_> = lines_to_grid_of_chars(lines).collect();
     let mut num_loops = 0;
@@ -232,9 +233,10 @@ pub fn run2(lines: &mut LinesIterator) -> String {
             now = Instant::now();
         }
     }
+    print!("\rProgress: 100.00%");
     println!();
 
-    format!("Number of positions which cause a loop: {num_loops}")
+    format!("{num_loops}")
 }
 
 #[allow(dead_code)]
