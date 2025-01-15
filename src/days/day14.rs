@@ -68,17 +68,6 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{output}")
 }
 
-fn chars_grid_to_string(chars: &[Vec<char>]) -> String {
-    chars
-        .iter()
-        .map(|l| {
-            let mut s = l.iter().collect::<String>();
-            s.push('\n');
-            s
-        })
-        .collect()
-}
-
 fn robots_to_grid(robots: &Vec<(Coords, Velocity)>) -> Vec<Vec<char>> {
     let mut chars = Vec::with_capacity(HEIGHT as usize);
 

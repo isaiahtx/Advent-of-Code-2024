@@ -319,24 +319,25 @@ where
 }
 
 /// Outputs all nodes that
-pub fn get_nodes_in_cheapest_paths<T, F1, F2>(
+pub fn get_nodes_in_cheapest_paths<T, F1, F2, F3>(
     src: T,
-    tgts: &[T],
-    get_children: &mut F1,
-    get_parents: &mut F2,
+    is_tgt: &mut F1,
+    get_children: &mut F2,
+    get_parents: &mut F3,
 ) -> Option<HashSet<T>>
 where
     T: Eq + Hash + Copy + Debug + Ord,
-    F1: FnMut(T) -> Vec<(usize, T)>,
+    F1: FnMut(T) -> bool,
     F2: FnMut(T) -> Vec<(usize, T)>,
+    F3: FnMut(T) -> Vec<(usize, T)>,
 {
-    let mut nodes = Vec::new();
     let dist = dijkstra(src, get_children);
-    nodes.extend(dist.keys());
+    let nodes: Vec<_> = dist.keys().collect();
+    let tgts: Vec<_> = dist.keys().copied().filter(|&x| is_tgt(x)).collect();
 
     let mut min_cost = None;
 
-    for tgt in tgts {
+    for tgt in &tgts {
         let candidate_min_cost = dist.get(tgt);
         if let Some(c) = candidate_min_cost {
             match min_cost {
@@ -353,7 +354,7 @@ where
     let min_cost = min_cost?;
     let mut valid_tgts = Vec::new();
 
-    for tgt in tgts {
+    for tgt in &tgts {
         if dist.contains_key(tgt) && dist[tgt] == min_cost {
             valid_tgts.push(tgt);
         }
@@ -367,7 +368,7 @@ where
             if let Some(src_to_t) = dist.get(t) {
                 if let Some(tgt_to_t) = rev_dist.get(t) {
                     if *src_to_t + *tgt_to_t == min_cost {
-                        output.insert(*t);
+                        output.insert(**t);
                     }
                 }
             }
