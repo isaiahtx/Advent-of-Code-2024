@@ -114,6 +114,93 @@ where
 
 /// Outputs a shortest path from a source to a target in an **unweighted**
 /// graph.
+pub fn shortest_path_multiple_tgts<T, F1, F2>(
+    src: T,
+    is_tgt: F1,
+    get_children: F2,
+) -> Option<Vec<T>>
+where
+    T: Eq + Hash + Copy + Debug,
+    F1: Fn(T) -> bool,
+    F2: Fn(T) -> Vec<T>,
+{
+    if is_tgt(src) {
+        return Some(Vec::from([src]));
+    }
+
+    // Entries are (vertex, distance from source)
+    let mut q: VecDeque<(T, usize)> = VecDeque::new();
+
+    // Stores visited nodes, with a reference to their parent
+    let mut visited: HashMap<T, Option<T>> = HashMap::new();
+
+    // The src node has no parent, and is distance zero from itself.
+    visited.insert(src, None);
+    q.push_back((src, 0));
+
+    // Pick the nearest vertex u that has been visited
+    while let Some((u, dist)) = q.pop_front() {
+        for nbr in get_children(u) {
+            if let Vacant(e) = visited.entry(nbr) {
+                // For each neighbor nbr of u that has not been visited, mark
+                // it as visited with parent u, and set its distance to u's
+                // distance plus one.
+                e.insert(Some(u));
+                q.push_back((nbr, dist + 1));
+
+                if is_tgt(nbr) {
+                    // If nbr is the target, then we create the output path.
+
+                    // The number of vertices visited along the path is
+                    // dist + 2, since dist is the number of steps from the src
+                    // to the parent of the target.
+                    let output_length = dist + 2;
+
+                    // We will iterate over the path in reverse order, and
+                    // assign the vertices to the output vector in reverse
+                    // order. To do this, we will allocate the space we need
+                    // for the output vector, and then fill it up
+                    // back-to-front. This requires some unsafe code, since we
+                    // will technically be accessing un-initialized memory as
+                    // we fill the vector.
+                    let mut output = Vec::with_capacity(output_length);
+
+                    // This provides us a mutable reference to the
+                    // un-initialized capacity of the output vector.
+                    let rem = output.spare_capacity_mut();
+
+                    // To start, we will set the target as the last vertex
+                    // visited in the path.
+                    let mut cur = nbr;
+                    rem[output_length - 1].write(cur);
+
+                    // Now we iterate over the remaining steps we took, filling
+                    // up the output vector right to left;
+                    let mut i = 1;
+                    while let Some(parent) = visited[&cur] {
+                        i += 1;
+                        cur = parent;
+                        rem[output_length - i].write(cur);
+                    }
+
+                    // We want to make sure that we reached 0.
+                    // assert_eq!(output_length - i, 0);
+
+                    unsafe {
+                        output.set_len(output_length);
+                    }
+
+                    return Some(output);
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Outputs a shortest path from a source to a target in an **unweighted**
+/// graph.
 pub fn shortest_path<T, F>(src: T, tgt: T, get_children: F) -> Option<Vec<T>>
 where
     T: Eq + Hash + Copy + Debug,

@@ -1,16 +1,17 @@
+use crate::graph::shortest_path_multiple_tgts;
 use crate::utils::LinesIterator;
 use std::fmt::Write;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Output {
     None,
-    Out(i32),
+    Some(usize),
     Halt,
 }
 
 impl Output {
-    const fn to_option(self) -> Option<i32> {
-        if let Self::Out(x) = self {
+    const fn to_option(self) -> Option<usize> {
+        if let Self::Some(x) = self {
             Some(x)
         } else {
             None
@@ -20,15 +21,15 @@ impl Output {
 
 #[derive(Debug, Clone)]
 struct Computer {
-    a: i32,
-    b: i32,
-    c: i32,
-    program: Vec<i32>,
+    a: usize,
+    b: usize,
+    c: usize,
+    program: Vec<usize>,
     ip: usize,
 }
 
 impl Computer {
-    const fn combo(&self, operand: i32) -> i32 {
+    const fn combo(&self, operand: usize) -> usize {
         match operand {
             0..=3 => operand,
             4 => self.a,
@@ -37,6 +38,31 @@ impl Computer {
             _ => panic!("Invalid operand"),
         }
     }
+
+    // fn print_program(&self) {
+    //     for (i, opcode) in self.program.iter().enumerate().filter(|(i, _)| *i % 2 == 0) {
+    //         match *opcode {
+    //             // adv: Divide A by 2.pow(combo), store to A (truncate).
+    //             0 => println!("adv {}", self.program[i + 1]),
+    //             // bxl: Bitwise XOR B with literal, store to B.
+    //             1 => println!("bxl {}", self.program[i + 1]),
+    //             // bst: B = combo modulo 8.
+    //             2 => println!("bst {}", self.program[i + 1]),
+    //             // jnz: Do nothing if A == 0, otherwise jump to operand literal.
+    //             // Only increment instruction pointer if doesn't jump.
+    //             3 => println!("jnz {}", self.program[i + 1]),
+    //             // bxc: B = B XOR C.
+    //             4 => println!("bxc"),
+    //             // out: Output combo operand.
+    //             5 => println!("out {}", self.program[i + 1]),
+    //             // bdv: adv but store to B instead of A.
+    //             6 => println!("bdv {}", self.program[i + 1]),
+    //             // cdv: adv but store to B instead of A.
+    //             7 => println!("cdv {}", self.program[i + 1]),
+    //             _ => panic!("Invalid opcode"),
+    //         }
+    //     }
+    // }
 
     /// Returns true if the program halts.
     #[allow(clippy::cast_possible_truncation)]
@@ -51,31 +77,31 @@ impl Computer {
         match opcode {
             // adv: Divide A by 2.pow(combo), store to A (truncate).
             0 => {
-                println!("adv {operand} (combo: {})", self.combo(operand));
-                self.a = (f64::from(self.a) / 2.0_f64.powi(self.combo(operand))) as i32;
+                // println!("adv {operand} (combo: {})", self.combo(operand));
+                self.a >>= self.combo(operand);
                 self.ip += 2;
             }
 
             // bxl: Bitwise XOR B with literal, store to B.
             1 => {
-                println!("bxl {operand}");
+                // println!("bxl {operand}");
                 self.b ^= operand;
                 self.ip += 2;
             }
 
             // bst: B = combo modulo 8.
             2 => {
-                println!("bst {operand} (combo: {})", self.combo(operand));
-                self.b = self.combo(operand).rem_euclid(8);
+                // println!("bst {operand} (combo: {})", self.combo(operand));
+                self.b = self.combo(operand) & 7;
                 self.ip += 2;
             }
 
             // jnz: Do nothing if A == 0, otherwise jump to operand literal.
             // Only increment instruction pointer if doesn't jump.
             3 => {
-                println!("jnz {operand}");
+                // println!("jnz {operand}\n");
                 if self.a != 0 {
-                    self.ip = operand as usize;
+                    self.ip = operand;
                 } else {
                     self.ip += 2;
                 }
@@ -83,29 +109,29 @@ impl Computer {
 
             // bxc: B = B XOR C.
             4 => {
-                println!("bxc");
+                // println!("bxc");
                 self.b ^= self.c;
                 self.ip += 2;
             }
 
             // out: Output combo operand.
             5 => {
-                println!("out {operand} (combo: {})", self.combo(operand));
+                // println!("out {operand} (combo: {})", self.combo(operand));
                 self.ip += 2;
-                return Output::Out(self.combo(operand).rem_euclid(8));
+                return Output::Some(self.combo(operand) & 7);
             }
 
             // bdv: adv but store to B instead of A.
             6 => {
-                println!("bdv {operand} (combo: {})", self.combo(operand));
-                self.b = (f64::from(self.a) / 2.0_f64.powi(self.combo(operand))) as i32;
+                // println!("bdv {operand} (combo: {})", self.combo(operand));
+                self.b = self.a >> self.combo(operand);
                 self.ip += 2;
             }
 
             // cdv: adv but store to B instead of A.
             7 => {
-                println!("cdv {operand} (combo: {})", self.combo(operand));
-                self.c = (f64::from(self.a) / 2.0_f64.powi(self.combo(operand))) as i32;
+                // println!("cdv {operand} (combo: {})", self.combo(operand));
+                self.c = self.a >> self.combo(operand);
                 self.ip += 2;
             }
 
@@ -124,9 +150,6 @@ impl Computer {
 
         loop {
             let step_result = self.step();
-            println!("\t{step_result:?}");
-            println!("{self:?}");
-            println!();
             output.push(step_result);
             if matches!(step_result, Output::Halt) {
                 break;
@@ -138,15 +161,21 @@ impl Computer {
 }
 
 fn parse_input(lines: &mut LinesIterator) -> Computer {
-    let a = lines.next().unwrap().unwrap()[12..].parse::<i32>().unwrap();
-    let b = lines.next().unwrap().unwrap()[12..].parse::<i32>().unwrap();
-    let c = lines.next().unwrap().unwrap()[12..].parse::<i32>().unwrap();
+    let a = lines.next().unwrap().unwrap()[12..]
+        .parse::<usize>()
+        .unwrap();
+    let b = lines.next().unwrap().unwrap()[12..]
+        .parse::<usize>()
+        .unwrap();
+    let c = lines.next().unwrap().unwrap()[12..]
+        .parse::<usize>()
+        .unwrap();
 
     lines.next();
 
     let program = lines.next().unwrap().unwrap()[9..]
         .split(',')
-        .map(|x| x.parse::<i32>().unwrap())
+        .map(|x| x.parse::<usize>().unwrap())
         .collect();
 
     let ip = 0;
@@ -160,10 +189,18 @@ fn parse_input(lines: &mut LinesIterator) -> Computer {
     }
 }
 
+fn my_prgrm(a: usize) -> Vec<usize> {
+    let mut output = Vec::new();
+    let mut a = a;
+    while a != 0 {
+        output.push(0b110 ^ (a ^ (a >> ((a & 0b111) ^ 0b11))) & 0b111);
+        a >>= 3;
+    }
+    output
+}
+
 pub fn run1(lines: &mut LinesIterator) -> String {
     let mut comp = parse_input(lines);
-
-    println!("{comp:?}");
 
     let result =
         comp.run()
@@ -173,14 +210,32 @@ pub fn run1(lines: &mut LinesIterator) -> String {
                 let _ = write!(output, "{x},");
                 output
             });
-    let result = result[..result.len() - 1].to_string();
 
-    println!("{comp:?}");
-
-    result
+    result[..result.len() - 1].to_string()
 }
 
 pub fn run2(lines: &mut LinesIterator) -> String {
-    lines.next();
-    format!("{lines:?}")
+    let program = parse_input(lines).program;
+
+    let get_children = |x: (usize, usize)| {
+        let mut output: Vec<(usize, usize)> = Vec::new();
+
+        for i in (x.0 << 3)..((x.0 << 3) + 0o10) {
+            if i == 0 {
+                continue;
+            }
+            if my_prgrm(i)[0] == program[x.1 - 1] {
+                output.push((i, x.1 - 1));
+            }
+        }
+
+        output
+    };
+
+    let is_tgt = |x: (usize, usize)| program == my_prgrm(x.0);
+
+    shortest_path_multiple_tgts((0, program.len()), is_tgt, get_children).map_or_else(
+        || "No input will result in program as output".to_string(),
+        |path| format!("{}", path[path.len() - 1].0),
+    )
 }
