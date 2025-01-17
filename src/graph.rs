@@ -43,12 +43,13 @@ where
 }
 
 /// Outputs whether or not there exists a path from the source to the target.
-pub fn exists_path<T, F>(src: T, tgt: T, get_children: F) -> bool
+pub fn exists_path<T, F1, F2>(src: T, is_tgt: F1, get_children: F2) -> bool
 where
     T: Eq + Hash + Copy + Debug,
-    F: Fn(T) -> Vec<T>,
+    F1: Fn(T) -> bool,
+    F2: Fn(T) -> Vec<T>,
 {
-    if src == tgt {
+    if is_tgt(src) {
         return true;
     }
 
@@ -66,7 +67,7 @@ where
             // For each nbr of u that has not been visited...
             if visited.insert(nbr) {
                 // If nbr is the target, return true
-                if nbr == tgt {
+                if is_tgt(nbr) {
                     return true;
                 }
 
@@ -573,10 +574,10 @@ mod tests {
             _ => Vec::new(),
         };
 
-        assert!(exists_path(0, 5, get_children));
-        assert!(exists_path(0, 4, get_children));
-        assert!(exists_path(0, 2, get_children));
-        assert!(exists_path(0, 0, get_children));
+        assert!(exists_path(0, |x| x == 5, get_children));
+        assert!(exists_path(0, |x| x == 4, get_children));
+        assert!(exists_path(0, |x| x == 2, get_children));
+        assert!(exists_path(0, |x| x == 0, get_children));
     }
 
     #[test]
