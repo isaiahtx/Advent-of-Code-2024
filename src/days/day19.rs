@@ -1,4 +1,5 @@
 use crate::{graph::exists_path, utils::LinesIterator};
+use std::collections::HashMap;
 
 fn parse_input(lines: &mut LinesIterator) -> (Vec<String>, Vec<String>) {
     let available = lines
@@ -47,7 +48,32 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     format!("{possible}")
 }
 
+fn count_ways(design: &String, available: &[String], map: &mut HashMap<String, usize>) -> usize {
+    if map.contains_key(design) {
+        map[design]
+    } else if design.is_empty() {
+        1
+    } else {
+        let mut combinations = 0;
+        for a in available {
+            if design.starts_with(a) {
+                combinations += count_ways(&design[a.len()..].to_string(), available, map);
+            }
+        }
+        map.insert(design.to_string(), combinations);
+        combinations
+    }
+}
+
 pub fn run2(lines: &mut LinesIterator) -> String {
-    lines.next();
-    format!("{lines:?}")
+    let (available, designs) = parse_input(lines);
+
+    let mut result = 0;
+    let mut map = HashMap::new();
+
+    for design in designs {
+        result += count_ways(&design, &available, &mut map);
+    }
+
+    format!("{result}")
 }

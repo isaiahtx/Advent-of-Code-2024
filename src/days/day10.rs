@@ -56,7 +56,7 @@ pub fn run1(lines: &mut LinesIterator) -> String {
 pub fn run2(lines: &mut LinesIterator) -> String {
     let map: Vec<_> = lines_to_grid_of_usize(lines).collect();
 
-    let get_edges = make_get_edges(&map);
+    let mut get_edges = make_get_edges(&map);
     let is_9 = make_is_9(&map);
 
     let mut output = 0;
@@ -64,7 +64,7 @@ pub fn run2(lines: &mut LinesIterator) -> String {
     for (r, row) in map.iter().enumerate() {
         for (c, character) in row.iter().enumerate() {
             if *character == 0 {
-                output += num_paths((r, c), &is_9, &get_edges);
+                output += num_paths((r, c), &is_9, &mut get_edges);
             }
         }
     }

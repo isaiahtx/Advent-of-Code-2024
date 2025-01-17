@@ -1,5 +1,5 @@
 use crate::direction::{Coords, Direction};
-use crate::graph::{exists_path, shortest_path, shortest_path_length};
+use crate::graph::{exists_path, shortest_path_length};
 use crate::utils::LinesIterator;
 
 const HEIGHT: usize = 71;
