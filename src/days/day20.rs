@@ -3,7 +3,7 @@ use crate::{
     graph::{get_dist, shortest_path},
     utils::LinesIterator,
 };
-use std::collections::HashMap;
+use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tile {
@@ -47,6 +47,7 @@ fn parse_input(lines: &mut LinesIterator) -> (Vec<Vec<Tile>>, Coords, Coords) {
 pub fn run1(lines: &mut LinesIterator) -> String {
     let (grid, src, tgt) = parse_input(lines);
 
+    let threshold = 100;
     let height = grid.len();
     let width = grid[0].len();
 
@@ -77,39 +78,87 @@ pub fn run1(lines: &mut LinesIterator) -> String {
     let path = shortest_path(src, tgt, get_empty_nbrs).unwrap();
 
     let dist = get_dist(src, get_empty_nbrs);
+
     let dist_rev = get_dist(tgt, get_empty_nbrs);
 
-    assert_eq!(path.len() - 1, dist[&tgt]);
-
-    let mut saves: HashMap<usize, usize> = HashMap::new();
+    let mut output = 0;
 
     for step in path {
         for wall_nbr in get_wall_nbrs(step) {
             for empty_nbr in get_empty_nbrs(wall_nbr) {
-                let cheat_dist = dist[&step] + 2 + dist_rev[&empty_nbr];
-                if cheat_dist < dist[&tgt] {
-                    *saves.entry(dist[&tgt] - cheat_dist).or_default() += 1;
+                if dist[&tgt] >= threshold + dist[&step] + 2 + dist_rev[&empty_nbr] {
+                    output += 1;
                 }
             }
         }
     }
 
-    // let mut saves_list: Vec<(usize, usize)> = saves.clone().into_iter().collect();
-    // saves_list.sort_unstable();
-    // for (k, n) in saves_list {
-    //     println!("There are {n} cheats that save {k} picoseconds.");
-    // }
-
-    let threshold = 100;
-    let num: usize = saves
-        .into_iter()
-        .filter_map(|(k, n)| if k >= threshold { Some(n) } else { None })
-        .sum();
-
-    format!("{num}")
+    format!("{output}")
 }
 
 pub fn run2(lines: &mut LinesIterator) -> String {
-    lines.next();
-    format!("{lines:?}")
+    let (grid, src, tgt) = parse_input(lines);
+
+    let threshold: usize = 100;
+    let max_steps: usize = 20;
+    let height = grid.len();
+    let width = grid[0].len();
+
+    let get_empty_nbrs = |x: Coords| {
+        let mut output = Vec::new();
+        for dir in [Direction::N, Direction::E, Direction::S, Direction::W] {
+            if let Some((r, c)) = dir.step_coords(x, height, width) {
+                if matches!(grid[r][c], Tile::Empty) {
+                    output.push((r, c));
+                }
+            }
+        }
+        output
+    };
+
+    let get_wall_nbrs = |x: Coords| {
+        let mut output = Vec::new();
+        for dir in [Direction::N, Direction::E, Direction::S, Direction::W] {
+            if let Some((r, c)) = dir.step_coords(x, height, width) {
+                if matches!(grid[r][c], Tile::Wall) {
+                    output.push((r, c));
+                }
+            }
+        }
+        output
+    };
+
+    let path = shortest_path(src, tgt, get_empty_nbrs).unwrap();
+
+    let dist = get_dist(src, get_empty_nbrs);
+
+    let dist_rev = get_dist(tgt, get_empty_nbrs);
+
+    let mut output = 0;
+
+    for cheat_start in path {
+        let mut seen = HashSet::new();
+        let mut to_check = VecDeque::new();
+        to_check.push_back((cheat_start, 0));
+        while !to_check.is_empty() {
+            let (u, d) = to_check.pop_front().unwrap();
+
+            for wall_nbr in get_wall_nbrs(u) {
+                if d < max_steps && seen.insert(wall_nbr) {
+                    to_check.push_back((wall_nbr, d + 1));
+                }
+            }
+
+            for empty_nbr in get_empty_nbrs(u) {
+                if d < max_steps && seen.insert(empty_nbr) {
+                    to_check.push_back((empty_nbr, d + 1));
+                    if threshold + dist[&cheat_start] + d + 1 + dist_rev[&empty_nbr] <= dist[&tgt] {
+                        output += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    format!("{output}")
 }
