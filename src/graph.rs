@@ -200,6 +200,31 @@ where
     None
 }
 
+pub fn get_dist<T, F>(src: T, get_children: F) -> HashMap<T, usize>
+where
+    T: Eq + Hash + Copy + Debug,
+    F: Fn(T) -> Vec<T>,
+{
+    let mut dist = HashMap::new();
+    let mut q: VecDeque<T> = VecDeque::new();
+    let mut visited: HashSet<T> = HashSet::new();
+
+    dist.insert(src, 0);
+    q.push_back(src);
+    visited.insert(src);
+
+    while let Some(u) = q.pop_front() {
+        for nbr in get_children(u) {
+            if visited.insert(nbr) {
+                q.push_back(nbr);
+                dist.insert(nbr, dist[&u] + 1);
+            }
+        }
+    }
+
+    dist
+}
+
 /// Outputs a shortest path from a source to a target in an **unweighted**
 /// graph.
 pub fn shortest_path_length<T, F1, F2>(src: T, is_tgt: F1, get_children: F2) -> Option<usize>
