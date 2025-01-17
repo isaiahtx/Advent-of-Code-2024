@@ -201,6 +201,38 @@ where
 
 /// Outputs a shortest path from a source to a target in an **unweighted**
 /// graph.
+pub fn shortest_path_length<T, F1, F2>(src: T, is_tgt: F1, get_children: F2) -> Option<usize>
+where
+    T: Eq + Hash + Copy + Debug,
+    F1: Fn(T) -> bool,
+    F2: Fn(T) -> Vec<T>,
+{
+    if is_tgt(src) {
+        return Some(0);
+    }
+
+    let mut q: VecDeque<(T, usize)> = VecDeque::new();
+    let mut visited: HashSet<T> = HashSet::new();
+
+    visited.insert(src);
+    q.push_back((src, 0));
+
+    while let Some((u, dist)) = q.pop_front() {
+        for nbr in get_children(u) {
+            if visited.insert(nbr) {
+                if is_tgt(nbr) {
+                    return Some(dist + 1);
+                }
+                q.push_back((nbr, dist + 1));
+            }
+        }
+    }
+
+    None
+}
+
+/// Outputs a shortest path from a source to a target in an **unweighted**
+/// graph.
 pub fn shortest_path<T, F>(src: T, tgt: T, get_children: F) -> Option<Vec<T>>
 where
     T: Eq + Hash + Copy + Debug,
