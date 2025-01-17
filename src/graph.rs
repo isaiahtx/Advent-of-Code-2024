@@ -45,17 +45,17 @@ where
 /// Outputs whether or not there exists a path from the source to the target.
 pub fn exists_path<T, F1, F2>(src: T, is_tgt: F1, get_children: F2) -> bool
 where
-    T: Eq + Hash + Copy + Debug,
+    T: Eq + Hash + Clone + Debug,
     F1: Fn(T) -> bool,
     F2: Fn(T) -> Vec<T>,
 {
-    if is_tgt(src) {
+    if is_tgt(src.clone()) {
         return true;
     }
 
     // Stores visited nodes
     let mut visited: HashSet<T> = HashSet::new();
-    visited.insert(src);
+    visited.insert(src.clone());
 
     // Stores nodes whose neighbors have not yet been checked
     let mut q: VecDeque<T> = VecDeque::new();
@@ -65,9 +65,9 @@ where
     while let Some(u) = q.pop_front() {
         for nbr in get_children(u) {
             // For each nbr of u that has not been visited...
-            if visited.insert(nbr) {
+            if visited.insert(nbr.clone()) {
                 // If nbr is the target, return true
-                if is_tgt(nbr) {
+                if is_tgt(nbr.clone()) {
                     return true;
                 }
 
