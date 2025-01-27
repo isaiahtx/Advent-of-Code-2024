@@ -397,46 +397,22 @@ where
 
 /// Outputs the number of paths from source to a target in an **unweighted**
 /// graph, where we are assuming the source is not a target.
-///
-/// Uses DFS algorithm, could maybe be made more efficient by swithcing to a
-/// BFS algorithm.
-pub fn num_paths<T, F1, F2>(src: T, is_tgt: &F1, get_children: &mut F2) -> usize
+pub fn num_paths<T, F1, F2>(src: T, is_tgt: &F1, get_children: &F2) -> usize
 where
-    T: Eq + Hash + Debug + Clone,
+    T: Eq + Hash + Debug + Copy,
     F1: Fn(T) -> bool,
-    F2: FnMut(T) -> Vec<T>,
+    F2: Fn(T) -> Vec<T>,
 {
+    // Assuming src != tgt
+    // assert_ne!(src, tgt);
     let mut count = 0;
-
-    if is_tgt(src.clone()) {
-        count += 1;
-    }
-
-    // Stores visited nodes
-    let mut visited: HashSet<T> = HashSet::new();
-    visited.insert(src.clone());
-
-    // Stores nodes whose neighbors have not yet been checked
-    let mut q: VecDeque<T> = VecDeque::new();
-    q.push_back(src);
-
-    // Pick the nearest vertex u that has been visited
-    while let Some(u) = q.pop_front() {
-        for nbr in get_children(u) {
-            // For each nbr of u that has not been visited...
-            if visited.insert(nbr.clone()) {
-                // If nbr is the target, return true
-                if is_tgt(nbr.clone()) {
-                    count += 1;
-                }
-
-                // Otherwise, mark nbr as visited and add it to the queue to
-                // check its neighbors.
-                q.push_back(nbr);
-            }
+    for nbr in get_children(src) {
+        if is_tgt(nbr) {
+            count += 1;
+        } else {
+            count += num_paths(nbr, is_tgt, get_children);
         }
     }
-
     count
 }
 
