@@ -1,5 +1,7 @@
 # 2024 Advent of Code solutions written in Rust
 
+(Plus implementation of some standard data structures + algorithms in Rust)
+
 My code for each day can be found in `src/days`. To run the code, simply build
 the Rust project and run `cargo run -- <day_number> <part_number>
 <input_path>`. The final argument is optional; if no input path is provided
