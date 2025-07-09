@@ -15,4 +15,4 @@ cargo run -- 4 2 input.txt
 
 [![CI](https://github.com/isaiahtx/Advent-of-Code-2024/actions/workflows/ci.yml/badge.svg)](https://github.com/isaiahtx/Advent-of-Code-2024/actions/workflows/ci.yml/)
 
-Each day and many of the data structures & algorithms have dedicated unit tests, which are automatically run using a GitHub Actions workflow.
+Each implemented data structure, algorithm, and daily solution has dedicated unit tests, which are automatically run via a GitHub Actions workflow
