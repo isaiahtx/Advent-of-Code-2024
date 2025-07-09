@@ -10,3 +10,9 @@ For example, to run my solution to part 2 on day 4 with the file `input.txt`, on
 ```
 cargo run -- 4 2 input.txt
 ```
+
+## Unit Tests/CI
+
+[![CI](https://github.com/isaiahtx/Advent-of-Code-2024/actions/workflows/ci.yml/badge.svg)](https://github.com/isaiahtx/Advent-of-Code-2024/actions/workflows/ci.yml/)
+
+Each day and many of the data structures & algorithms have dedicated unit tests, which are automatically run using a GitHub Actions workflow.
